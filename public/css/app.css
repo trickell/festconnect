@@ -1,0 +1,19 @@
+.shadow_lg{
+    text-shadow: 5px 5px 10px rgba(0,0,0,0.8);
+}
+
+.bg_top {
+    background-image: url('/img/hero/hula_1.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    color: white;
+    text-align: center;
+    width: 100%;
+    height: 70vh;
+    margin: 20px 0;
+    /* display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center; */
+}
