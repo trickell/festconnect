@@ -1,19 +1,45 @@
+body { background: linear-gradient(90deg, rgba(31,31,31,1) 0%, rgba(12,34,54,1) 100%);}
+
 .shadow_lg{
     text-shadow: 5px 5px 10px rgba(0,0,0,0.8);
 }
 
 .bg_top {
-    background-image: url('/img/hero/hula_1.jpg');
+    
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
     color: white;
     text-align: center;
     width: 100%;
-    height: 70vh;
+    height: 60vh;
     margin: 20px 0;
+    padding-top: 100px;
+    position: relative;
+
     /* display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center; */
+}
+
+
+.missed_text {
+    text-wrap: pretty;
+}
+.imText {
+    display: inline;
+    position: relative;
+}
+
+/* ====== VIDEO STYLING ====== */
+video::media-controls-fullscreen-button {
+    display: none;
+}
+.missedconn, .home {
+    display: block;
+    position: absolute;
+    width: 80%;
+    z-index: -100;
+    mask-image: radial-gradient(circle, black 80%, rgba(0, 0, 0, 0.5) 0%);
 }

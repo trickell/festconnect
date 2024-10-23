@@ -1,6 +1,4 @@
-@extends('layout.default')
 
-@section('content')
 <footer>
     <div class="container">
         <div class="row">
@@ -10,5 +8,3 @@
         </div>
     </div>
 </footer>
-
-@stop

@@ -16,3 +16,11 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('pages.home');
 });
+
+Route::get('/missed_connections', function () {
+    return view('pages.missedconn');
+});
+
+Route::get('/reconnections', function () {
+    return view('pages.reconnections');
+});
