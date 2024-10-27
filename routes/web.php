@@ -24,3 +24,5 @@ Route::get('/missed_connections', function () {
 Route::get('/reconnections', function () {
     return view('pages.reconnections');
 });
+
+Route::get('/posts', 'PostsController@posts');

@@ -12,6 +12,12 @@
         <link href={{ asset('css/app.css') }} rel="stylesheet">
 
         <script src="https://cdn.tailwindcss.com"></script>
+        <script
+        src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+        crossorigin="anonymous"></script>
+        <script src={{ asset('js/app.js') }}></script>
+
 
         <!-- Styles -->
         <style>
@@ -25,15 +31,91 @@
                 <source src="/img/video/reconnections_bg.mp4" type="video/mp4">
             </video>
             <div class="text-white-500 text-center flex flex-col">
-                <h1 class="text-6xl font-semibold leading-relaxed text-gray-900 dark:text-white">Rekindle / Find a Missed Connection</h1>
-                <div class="missed_text flex flex-container flex-col max-w-5xl m-5 text-gray-400 text-lg">
-                    <p class="pt-5">Have you ever met someone at a festival and felt a connection, but didn't get their contact information? Or maybe you're looking for someone you met at a festival and want to reconnect? Fest Connection is here to help you find that missed connection.</p>
-                    <p class="pt-5">Fill out a little bit of information about the connection you're looking for and some information about yourself. We'll do the best
-                        to help find that person. If a connection is found, we will notify you via email! </p>
-                </div> 
+                <div id="rec_landing" class="flex flex-container flex-col">
+                    <h1 class="text-6xl font-semibold leading-relaxed text-gray-900 dark:text-white">Rekindle / Find a Missed Connection</h1>
+                    <div class="missed_text flex flex-container flex-col max-w-5xl m-5 text-gray-400 text-lg">
+                        <p class="pt-5">Have you ever met someone at a festival and felt a connection, but didn't get their contact information? Or maybe you're looking for someone you met at a festival and want to reconnect? Fest Connection is here to help you find that missed connection.</p>
+                        <p class="pt-5">Fill out a little bit of information about the connection you're looking for and some information about yourself. We'll do the best
+                            to help find that person. If a connection is found, we will notify you via email! </p>  
+                    </div> 
+                    <div class="flex flex-container flex-row justify-center">
+                        <div class="flex flex-container flex-row mx-5">
+                            <button class="p-2 px-6 mt-4 bg-red-500 text-white rounded-lg submitMissedConnections">Submit a Missed Connection</button>
+                        </div>
+                        <div class="flex flex-container flex-row">
+                            <button class="p-2 px-6 mt-4 bg-red-500 text-white rounded-lg viewMissedConnections">View Missed Connections</button>
+                        </div>
+                    </div>
+                </div>
 
-                <div class="flex flex-container flex-row">
-                    
+                <div id="rec_form" class="flex flex-container flex-col hidden">
+                    <h3 class="text-6xl font-semibold leading-relaxed text-gray-900 dark:text-white">Fill the Form out, best to memory!</h3>
+                    <form id="missed_connection_form" class="flex flex-container flex-col max-w-5xl m-5 text-gray-400 text-lg">
+                        <div class="flex flex-container flex-row">
+                            <label for="festival_name" class="text-xl">Festival Name:</label>
+                            <select id="festival_name" name="festival_name" class="p-2 ml-4 rounded-sm" required>
+                                <option value="0">Select a Festival</option>
+                                <optgroup label="EDM">                                    
+                                    <option value="lostLands">Lost Lands</option>
+                                    <option value="electricforest">Electric Forest</option>
+                                    <option value="solfest">Sol Fest</option>                                                                   
+                                    <option value="edc">Electric Daisy Carnival</option>
+                                    <option value="umf">Ultra Music Festival</option>
+                                </optgroup>
+                                <optgroup label="Rock">
+                                    <option value="louderthanlife">Louder Than Life</option>
+                                    <option value="aftershock">Aftershock</option>\
+                                    <option value="bourbonandbeyond">Bourbon And Beyond</option>
+                                </optgroup>
+                                <option value="lollapalooza">Lollapalooza</option> 
+                                <option value="Bonnaroo">Bonnaroo</option>
+                                <option value="coachella">Coachella</option>
+                                <option value="other">Other</option>
+                            </select>
+
+                            <!--<input type="text" id="festival_name" name="festival_name" class="p-2 ml-4 rounded-lg" required>-->
+                        </div>
+                        <div class="flex flex-container flex-row">
+                            <label for="missedConnection" class="text-xl">Who is the Missed Connection?</label>
+                            <textarea id="missedConnection" name="missedConnection" class="p-2 ml-4 rounded-lg"></textarea>
+
+                            <!-- Optional: Upload an Image <input type="file" id="optConnectImg" name="optConnectImg" class="p-2 ml-4 rounded-lg" accept="image/*,.pdf"> -->
+                        </div>
+                        <div class="flex flex-container flex-row">
+                            <label>Optional:</label> Upload an Image <input type="file" id="optConnectImg" name="optConnectImg" class="p-2 ml-4 rounded-lg" accept="image/*,.pdf">
+                        </div>
+                        <div class="flex flex-container flex-row">
+                            <label for="description" class="text-xl">Location / Description of how we met: <i class="text-sm">Where in the festival?</i></label>
+                            <textarea id="description" name="description" class="p-2 ml-4 rounded-lg" required></textarea>
+                        </div>
+                        <div class="flex flex-container flex-row">
+                            <label for="your_name" class="text-xl">Your Name:</label>
+                            <input type="text" id="your_name" name="name" class="p-2 ml-4 rounded-lg" placeholder="Real Name or Festival Name" required>
+                        </div>
+                        <div class="flex flex-container flex-row">
+                            <label for="your_email" class="text-xl">Your Email: (We notify you when they connect with you!)</label>
+                            <input type="text" id="your_email" name="email" class="p-2 ml-4 rounded-lg" required>
+                        </div>
+                        <div class="flex flex-container flex-row text-right">
+                            <i class="m-5">After Submitting, You will be brought to everyone elses posts!</i>
+                            <button type="submit" class="p-2 px-6 mt-4 bg-red-500 text-white rounded-lg text-right">Submit</button>
+                            <button class="p-2 px-6 mt-4 bg-red-500 text-white rounded-lg text-right viewMissedConnections mx-10">View Posts</button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- This is where the content for the missed connections will go -->
+                <div id="rec_posts" class="flex flex-container flex-col hidden">
+                    <div class="filter"></div>
+                    <div class="body"></div>
+                    <div class="buttons">
+                    <div class="flex flex-container flex-row justify-center">
+                        <div class="flex flex-container flex-row mx-5">
+                            <button class="p-2 px-6 mt-4 bg-red-500 text-white rounded-lg submitMissedConnections">Submit a Missed Connection</button>
+                        </div>
+                    </div>
+                    </div>
                 </div>
             </div>
+        </div>
     </body>
