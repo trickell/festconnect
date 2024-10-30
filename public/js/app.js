@@ -49,11 +49,40 @@ $(function(){
         $("#rec_form").fadeIn(1000);
     });
 
+    // Handle the form submission for missed connection posts
+    $("#missed_connection_form").submit(function(e){
+        e.preventDefault();
+        console.log("Form Submitted!");
+        console.log($(this).serializeArray());
+
+        // $.post("submit_post", $(this).serializeArray(), function(data){
+        //     console.log(data);
+        // });
+        $.ajaxSetup({
+            beforeSend: function() {
+               $('.loader').show();
+            },
+            complete: function(){},
+            success: function() {}
+          });
+        $.ajax({
+            url: 'submit_post',
+            type: 'post',
+            data: $(this).serializeArray(),
+            dataType: 'json',
+            success: function (data) {
+                console.info(data);
+                $('.loader').hide()
+                $(".formSubmittedBtn").click();
+            }
+        });
+    });
+
     // Define variables needed for viewing posts
     let postLoaded = false;
 
     // Handle the loading of posts
-    $(".viewMissedConnections").click(function(){
+    $(".viewMissedConnections, .formSubmittedBtn").click(function(){
         // Handle graphical events
         $("#rec_landing").hide();
         $("#rec_form").hide();

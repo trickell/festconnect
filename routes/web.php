@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
+$C_NAMESPACE = "App\Http\Controllers\\";
 
 Route::get('/', function () {
     return view('pages.home');
@@ -25,4 +26,5 @@ Route::get('/reconnections', function () {
     return view('pages.reconnections');
 });
 
-Route::get('/posts', 'PostsController@posts');
+Route::get('/posts', $C_NAMESPACE . 'PostsController@posts');
+Route::post('/submit_post', $C_NAMESPACE . 'PostsController@submit_post');

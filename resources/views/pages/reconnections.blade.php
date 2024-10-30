@@ -30,7 +30,16 @@
         <video class="missedconn" autoplay muted loop>
                 <source src="/img/video/reconnections_bg.mp4" type="video/mp4">
             </video>
-            <div class="text-white-500 text-center flex flex-col">
+            <nav class="text-white-500 text-center flex flex-row absolute top-0">
+                <ul class="flex flex-row">
+                    <li class="p-5 m-2 text-slate-500 bg-violet-950/50 text-xl hover:text-slate-200 hover:bg-violet-900/80 hover:border-1 hover:border-violet-500 hover:rounded-sm"><a htext-slate-200 "><a href="/">Home</a></li>
+                    <li class="p-5 m-2 text-slate-500 bg-violet-950/50 text-xl hover:text-slate-200 hover:bg-violet-900/80 hover:border-1 hover:border-violet-500 hover:rounded-sm"><a href="/missed_connections">Missed Connections</a></li>
+                    <li class="p-5 m-2 text-slate-500 bg-violet-950/50 text-xl hover:text-slate-200 hover:bg-violet-900/80 hover:border-1 hover:border-violet-500 hover:rounded-sm"><a href="/about">About</a></li>
+                    <li class="p-5 m-2 text-slate-500 bg-violet-950/50 text-xl hover:text-slate-200 hover:bg-violet-900/80 hover:border-1 hover:border-violet-500 hover:rounded-sm"><a href="/contact">Contact a Moderator</a></li>
+                </ul>
+            </nav>
+            <div class="text-white-500 text-center flex flex-col">           
+                <div class="loader hidden"></div>
                 <div id="rec_landing" class="flex flex-container flex-col">
                     <h1 class="text-6xl font-semibold leading-relaxed text-gray-900 dark:text-white">Rekindle / Find a Missed Connection</h1>
                     <div class="missed_text flex flex-container flex-col max-w-5xl m-5 text-gray-400 text-lg">
@@ -51,9 +60,11 @@
                 <div id="rec_form" class="flex flex-container flex-col hidden">
                     <h3 class="text-6xl font-semibold leading-relaxed text-gray-900 dark:text-white">Fill the Form out, best to memory!</h3>
                     <form id="missed_connection_form" class="flex flex-container flex-col max-w-5xl m-5 text-gray-400 text-lg">
+                        <input id="cstoken" type="hidden" name="_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="user_id" value="001"><!-- BADLY DONE! NEED TO FIX -->
                         <div class="flex flex-container flex-row">
-                            <label for="festival_name" class="text-xl">Festival Name:</label>
-                            <select id="festival_name" name="festival_name" class="p-2 ml-4 rounded-sm" required>
+                            <label for="festival" class="text-xl">Festival Name:</label>
+                            <select id="festival_name" name="festival" class="p-2 ml-4 rounded-sm" required>
                                 <option value="0">Select a Festival</option>
                                 <optgroup label="EDM">                                    
                                     <option value="lostLands">Lost Lands</option>
@@ -76,8 +87,8 @@
                             <!--<input type="text" id="festival_name" name="festival_name" class="p-2 ml-4 rounded-lg" required>-->
                         </div>
                         <div class="flex flex-container flex-row">
-                            <label for="missedConnection" class="text-xl">Who is the Missed Connection?</label>
-                            <textarea id="missedConnection" name="missedConnection" class="p-2 ml-4 rounded-lg"></textarea>
+                            <label for="missed_conn" class="text-xl">Who is the Missed Connection? <i class="text-sm">ex. Detailed description of the person</i></label>
+                            <textarea id="missedConnection" name="missed_conn" class="p-2 ml-4 rounded-lg"></textarea>
 
                             <!-- Optional: Upload an Image <input type="file" id="optConnectImg" name="optConnectImg" class="p-2 ml-4 rounded-lg" accept="image/*,.pdf"> -->
                         </div>
@@ -85,8 +96,8 @@
                             <label>Optional:</label> Upload an Image <input type="file" id="optConnectImg" name="optConnectImg" class="p-2 ml-4 rounded-lg" accept="image/*,.pdf">
                         </div>
                         <div class="flex flex-container flex-row">
-                            <label for="description" class="text-xl">Location / Description of how we met: <i class="text-sm">Where in the festival?</i></label>
-                            <textarea id="description" name="description" class="p-2 ml-4 rounded-lg" required></textarea>
+                            <label for="post" class="text-xl">Detailed Description of how we met: <i class="text-sm">ex. Where in the festival?</i></label>
+                            <textarea id="description" name="post" class="p-2 ml-4 rounded-lg" required></textarea>
                         </div>
                         <div class="flex flex-container flex-row">
                             <label for="your_name" class="text-xl">Your Name:</label>
@@ -102,6 +113,7 @@
                             <button class="p-2 px-6 mt-4 bg-red-500 text-white rounded-lg text-right viewMissedConnections mx-10">View Posts</button>
                         </div>
                     </form>
+                    <a class="absolute left-9000 rounded-lg text-right formSubmittedBtn"></a>
                 </div>
                 
                 <!-- This is where the content for the missed connections will go -->
