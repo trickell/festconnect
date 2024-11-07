@@ -26,5 +26,5 @@ Route::get('/reconnections', function () {
     return view('pages.reconnections');
 });
 
-Route::get('/posts', $C_NAMESPACE . 'PostsController@posts');
+Route::get('/get_posts', $C_NAMESPACE . 'PostsController@get_posts');
 Route::post('/submit_post', $C_NAMESPACE . 'PostsController@submit_post');

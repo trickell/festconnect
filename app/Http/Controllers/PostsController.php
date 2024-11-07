@@ -8,21 +8,10 @@ class PostsController extends BaseController
 {
     
 
-    public function posts()
+    public function get_posts()
     {
-        // Normal DB methods are working. Get working with Eloquent ORM
-        // DB::table('user')->insert([
-        //     'username' => 'testuser',
-        //     'email' => 'test@user.com',
-        //     'password' => md5('fconnection123'),
-        //     'created_at' => date('Y-m-d H:i:s')
-        //     ]);
-        
-        // Eloquent ORM
-        $user = \App\Models\User::all();
-        echo $user;
-
-        // return view('pages.home');
+        $user = \App\Models\Posts::with('user')->hasMany('')->get();
+        return json_encode($user);
     }
 
     public function submit_post()
@@ -38,8 +27,9 @@ class PostsController extends BaseController
         return json_encode(['status' => 'success', 'message' => 'Post submitted successfully', 'post_id' => $post->id, 'post_data' => $data]);
     }
 
-    public function reconnections()
+    public function get_comments($id)
     {
-        return view('pages.reconnections');
+        $comments = \App\Models\Posts::find($id)->comments;
+        return json_encode($comments);
     }
 }
