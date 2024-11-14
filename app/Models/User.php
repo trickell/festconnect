@@ -24,6 +24,8 @@ class User extends Authenticatable
         'created_at'
     ];
 
+    public $timestamps = false;
+
     /**
      * The attributes that should be hidden for serialization.
      *
@@ -43,4 +45,10 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    public function posts()
+    {
+        return $this->hasMany(posts::class, 'user_id', 'id');
+    }
+
 }

@@ -1,7 +1,19 @@
-body { background: linear-gradient(90deg, rgba(31,31,31,1) 0%, rgba(12,34,54,1) 100%);}
+body { background: linear-gradient(90deg, rgba(31,31,31,1) 0%, rgba(12,34,54,1) 100%); width: 100%; }
+
+header { 
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    z-index: 10;
+    background: rgba(0,0,0,0.5);
+}
 
 .shadow_lg{
     text-shadow: 5px 5px 10px rgba(0,0,0,0.8);
+    font-size: 1.9rem;
+    line-height: 1.75rem;
+    flex-direction: column;
 }
 
 .bg_top {
@@ -71,10 +83,19 @@ video::media-controls-fullscreen-button {
 }
 .missedconn, .home {
     display: block;
-    position: absolute;
+    position: fixed;
     width: 80%;
     z-index: -100;
     mask-image: radial-gradient(circle, black 80%, rgba(0, 0, 0, 0.5) 0%);
+}
+
+@media (max-width: 800px) {
+    .missedconn, .home {
+        display: block;
+        position: fixed;
+        height: 100vh;
+        width: 100%;
+    }
 }
 
 .festcolors {
@@ -102,4 +123,36 @@ video::media-controls-fullscreen-button {
   @keyframes l4 {
      50%  {width:60px;height: 60px;transform: rotate(180deg)}
      100% {transform: rotate(360deg)}
+  }
+
+  #video-bg {
+    position: fixed;
+    top: 0; right: 0; bottom: 0; left: 0;
+    overflow: hidden;
+  }
+  #video-bg > video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+  /* 1. No object-fit support: */
+  @media (min-aspect-ratio: 16/9) {
+    body{ position: fixed; }
+    #video-bg > video { height: 300%; top: -100%; }
+  }
+  @media (max-aspect-ratio: 16/9) {
+    body{ height: 100vh;
+        width: 100%; }
+    
+    #video-bg > video { width: 300%; left: -100%; }
+  }
+  /* 2. If supporting object-fit, overriding (1): */
+  @supports (object-fit: cover) {
+    #video-bg > video {
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
   }

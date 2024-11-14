@@ -40,6 +40,17 @@ let postData = [
     }
 ];
 
+// Formats a date for Website use.
+function formatDate(date){
+    if(date === null){ return "N/A"; }
+    date = new Date(date);
+    return date.toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'});
+}
+
+// Define a method for grabbing the csrf token
+function getCSRFToken(){
+    return $('#cstoken').val();
+}
 
 $(function(){
     // Take care of the click events on the missed connections pages
@@ -82,6 +93,23 @@ $(function(){
     let postCount = 0;
     let posts = [];
 
+    // Define a method for submitting a comment
+    function subComment(postId, userId, comment){
+        console.log("Submitting Comment for Post: "+postId+" with userid: "+userId);
+        console.log("Comment: "+comment);
+    
+        $.ajax({
+            url: 'submit_comment',
+            type: 'post',
+            data: {_token: getCSRFToken, post_id: postId, user_id: userId,
+                  comment: comment },
+            dataType: 'json',
+            success: function (data) {
+                console.info(data);
+            }
+        });
+    }
+
     // Handle the loading of posts
     $(".viewMissedConnections, .formSubmittedBtn").click(function(){
         // Handle graphical events
@@ -97,25 +125,25 @@ $(function(){
             success: function (data) {
                 console.info(data);
                 posts = data;
-
+                
                 $.each(posts, function(index, val){    
                     if (val.turn_off == 1){ return; }
                     $("#rec_posts .body").append(`
                         <div class="flex flex-col">
                             <a href="/reconnections" class="flex flex-container flex-col">
                                 <div class="flex flex-col text-xl border-solid rounded-md border-2 text-gray-600 dark:text-gray-400 hover:text-red-400 p-5 m-2 hover:bg-slate-900/80">
-                                    <div class="flex flex-container text-sm font-bold p-1 text-right justify-end">Posted on: `+ val.created_at +`</div>
+                                    <div class="flex flex-container text-sm font-bold p-1 text-right justify-end">Posted on: `+ new Date(val.created_at).toDateString() +`</div>
                                     <div class="flex flex-col xl:flex-row">
                                         <div class="px-3">
                                             <img src=`+ val.image +` alt="Post Image" class="w-28 h-28">
                                         </div>
                                         <div class="text-left">
                                             <h3 class="text-xl font-bold p-1">Festival: <span class="festcolors">`+ val.festival +`</span></h3>
-                                            <h3 class="text-lg font-bold p-1"><span class="festcolors">`+ val.user.username +`</span> is looking for this missed connection:</h3>
+                                            <h3 class="text-lg font-bold p-1"><span class="festcolors">`+ val.user.username +`</span> is looking for this missed connection: `+ val.missed_conn +`</h3>
                                             <p class="text-base p-5">`+ val.post +`</p>
                                         </div>      
                                     </div>     
-                                    <div id="comment_events" class="flex flex-row text-base justify-end border-b-2 border-slate-800 mb-5">
+                                    <div id="comment_events" class="flex flex-col text-base justify-end border-b-2 border-slate-800 mb-5">
                                         <div class="flex flex-row p-1 ">
                                             <button id="v_comments" data-id="`+ val.id +`" class="flex flex-row p-2 m-2 bg-violet-900/50 rounded-md hover:bg-violet-900/80">
                                                 <a href="/reconnections" class="text-slate-50 dark:text-gray-400 hover:text-red-400">View Comments</a>
@@ -139,6 +167,14 @@ $(function(){
                                                 Connect with a user</a>
                                             </button>
                                         </div>
+                                        <div id="submit_comment_`+ val.id +`" class="flex flex-col p-1 hidden">
+                                            <form id="comment_form" class="flex flex-row p-1">
+                                                <input type="hidden" name="user_id" value="`+ val.user.id +`">
+                                                <input type="hidden" name="post_id" value="`+ val.id +`">
+                                                <input type="text" name="comment" class="p-2 ml-4 rounded-sm w-5/6" placeholder="Submit a Comment">
+                                                <button id="sub_comment" data-id="`+ val.id +`" class="p-2 m-2 w-1/6 bg-violet-900/50 rounded-md hover:bg-violet-900/80">Comment</button>
+                                            </form>
+                                        </div>
                                     </div>
                                     <div id="comments_`+ val.id +`" class="flex flex-row text-base hidden">                              
                                     </div>
@@ -147,44 +183,75 @@ $(function(){
                         </div>
                     `);
                     // Add comments to the post
-                    console.log(val.comments);
-                    if(val.comments){
-                        $.each(val.comments, function(index, c){
-                            if(c.parent === null){
-                                $("#comments_"+val.id).append(`
-                                    <div id="comm_`+ c.id +`" class="flex flex-col text-base p-1 m-1 bg-sky-600/50 rounded-md">
-                                        <div class="flex flex-row">
-                                            <div class="flex flex-row p-1">
-                                                <h3 class="text-lg font-bold p-1">`+ c.user +`</h3>
-                                                <p class="text-base p-1">`+ c.comment +`</p>
+                    $.get( "get_comments/"+val.id, function( comments ) {
+                        // Log it
+                        console.log(comments)
+                        if(comments){
+                            $.each(JSON.parse(comments), function(index, c){
+                                if(c.parent === null){
+                                    $("#comments_"+val.id).append(`
+                                        <div id="comm_`+ c.id +`" class="flex flex-col text-base p-1 m-1 bg-sky-600/50 rounded-md">
+                                            <div class="flex flex-row">
+                                                <div class="flex flex-row p-1 text-slate-100">
+                                                    <h3 class="text-lg font-bold p-1">`+ c.user 
+                                                    +`<br/><span class="italic text-xs text-slate-500">`+ formatDate(c.created_at) +`</span></h3>
+                                                    <p class="text-base p-1">`+ c.comment +`</p>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                `);
-                            }
-                            else {
-                                $("#comm_"+c.parent).append(`
-                                    <div id="comm_`+ c.id +`" class="flex flex-col text-base p-1 m-1 bg-sky-600/50 rounded-md">
-                                        <div class="flex flex-row">
-                                            <div class="flex flex-row p-1">
-                                                <h3 class="text-lg font-bold p-1">`+ c.user +`</h3>
-                                                <p class="text-base p-1">`+ c.comment +`</p>
+                                    `);
+                                }
+                                else {
+                                    $("#comm_"+c.parent).append(`
+                                        <div id="comm_`+ c.id +`" class="flex flex-col text-base p-1 m-1 bg-sky-600/50 rounded-md">
+                                            <div class="flex flex-row">
+                                                <div class="flex flex-row p-1 text-sky-300">
+                                                    <h3 class="text-lg font-bold p-1">`+ c.user 
+                                                    +`<br/><span class="italic text-sm">`+ formatDate(c.created_at) +`</span></h3>
+                                                    <p class="text-base p-1">`+ c.comment +`</p>
+                                                </div>
                                             </div>
                                         </div>
+                                    `);
+                                }
+                            });
+                        }
+                        else {
+                            $("#comments_"+val.id).append(`
+                                <div class="flex flex-row text-base p-1 m-1 bg-sky-600/50 rounded-md">
+                                    <div class="flex flex-row p-1">
+                                        <p class="text-base p-1"><i>No comments yet! Be the first to post! Submit a comment!</i></p>
                                     </div>
-                                `);
-                            }
-                        });
-                    }
-                    else {
-                        $("#comments_"+val.id).append(`
-                            <div class="flex flex-row text-base p-1 m-1 bg-sky-600/50 rounded-md">
-                                <div class="flex flex-row p-1">
-                                    <p class="text-base p-1"><i>No comments yet! Be the first to post! Submit a comment!</i></p>
                                 </div>
-                            </div>
-                        `);
-                    }
+                            `);
+                        }
+                        console.log(data);  
+                        
+                        
+                    });
+
+                    // We need to handle the click events for the comments
+                    $("#comment_events button").click(function(e){
+                        e.stopImmediatePropagation();
+                        e.preventDefault();
+                        
+                        if($(this).attr("id") === "v_comments"){
+                            console.log($("#comments_"+$(this).attr("data-id")));                    
+                            $("#comments_"+$(this).attr("data-id")).toggle();
+                        }
+                        else if($(this).attr("id") === "s_comments"){
+                            console.log("Submit a Comment for: "+$(this).attr("data-id"));
+                            $("#submit_comment_"+$(this).attr("data-id")).toggle();
+                        }
+                        else if($(this).attr("id") === "connect_w_user"){
+                            console.log("Connect with a user for: "+$(this).attr("data-id"));
+                        }
+                        else if($(this).attr("id") === "sub_comment"){
+                            console.log("Submit a user comment for : "+$(this).attr("data-id"));
+                            let parent = $("#submit_comment_"+$(this).attr("data-id"));
+                            subComment($(this).attr("data-id"), $("input[name='user_id']", parent).val(), $("input[name='comment']", parent).val());
+                        }
+                    });
                 });
             }
         });
@@ -219,23 +286,6 @@ $(function(){
                     </div>
                 </div>
             </div>`);
-
-         // We need to handle the click events for the comments
-         $("#comment_events button").click(function(e){
-            e.preventDefault();
-            
-            if($(this).attr("id") === "v_comments"){
-                console.log("View Comments for: "+$(this).attr("data-id"));                    
-                $("#comments_"+$(this).attr("data-id")).toggle();
-            }
-            else if($(this).attr("id") === "s_comments"){
-                console.log("Submit a Comment for: "+$(this).attr("data-id"));
-            }
-            else if($(this).attr("id") === "connect_w_user"){
-                console.log("Connect with a user for: "+$(this).attr("data-id"));
-            }
-        });
-
     });
 
 });

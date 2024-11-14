@@ -14,7 +14,6 @@ class comments extends Model
         'parent',
         'comment',   
         'turn_off',     
-        'created_at',        
         '_token',
         '_method'
     ];

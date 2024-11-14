@@ -26,22 +26,30 @@
     </head>
     <body class="antialiased">
         
-        <div class="relative sm:flex sm:justify-center sm:items-center min-h-screen bg-dots-darker bg-center bg-gray-100 dark:bg-dots-lighter dark:bg-gray-900/70 selection:bg-red-500 selection:text-white">
-        <video class="missedconn" autoplay muted loop>
+        <div class="relative flex scroll-smooth flex-col sm:justify-center sm:items-center min-h-screen bg-dots-darker bg-center bg-gray-800/70 dark:bg-dots-lighter dark:bg-gray-900/70 selection:bg-red-500 selection:text-white lg:max-w-4xl lg:mx-auto">
+            <div id="video-bg">
+            <video class="missedconn" autoplay muted loop>
                 <source src="/img/video/reconnections_bg.mp4" type="video/mp4">
             </video>
-            <nav class="text-white-500 text-center flex flex-row absolute top-0">
-                <ul class="flex flex-row">
+            </div>
+            
+            <header class="justify-center">
+            <nav class="text-white-500 text-center flex flex-col z-0">
+                <ul class="flex flex-row mx-auto z-0">
                     <li class="p-5 m-2 text-slate-500 bg-violet-950/50 text-xl hover:text-slate-200 hover:bg-violet-900/80 hover:border-1 hover:border-violet-500 hover:rounded-sm"><a htext-slate-200 "><a href="/">Home</a></li>
                     <li class="p-5 m-2 text-slate-500 bg-violet-950/50 text-xl hover:text-slate-200 hover:bg-violet-900/80 hover:border-1 hover:border-violet-500 hover:rounded-sm"><a href="/missed_connections">Missed Connections</a></li>
                     <li class="p-5 m-2 text-slate-500 bg-violet-950/50 text-xl hover:text-slate-200 hover:bg-violet-900/80 hover:border-1 hover:border-violet-500 hover:rounded-sm"><a href="/about">About</a></li>
                     <li class="p-5 m-2 text-slate-500 bg-violet-950/50 text-xl hover:text-slate-200 hover:bg-violet-900/80 hover:border-1 hover:border-violet-500 hover:rounded-sm"><a href="/contact">Contact a Moderator</a></li>
                 </ul>
             </nav>
+            </header>
+            
+            <div id="top_spacer" class="flex flex-container flex-col h-20 mt-20"></div>
+
             <div class="text-white-500 text-center flex flex-col">           
-                <div class="loader hidden"></div>
-                <div id="rec_landing" class="flex flex-container flex-col">
-                    <h1 class="text-6xl font-semibold leading-relaxed text-gray-900 dark:text-white">Rekindle / Find a Missed Connection</h1>
+                <div class="loader z-0 hidden"></div>
+                <div id="rec_landing" class="flex flex-container flex-col z-0">
+                    <h1 class="text-6xl font-semibold leading-relaxed text-white dark:text-white mt-100">Rekindle / Find a Missed Connection</h1>
                     <div class="missed_text flex flex-container flex-col max-w-5xl m-5 text-gray-400 text-lg">
                         <p class="pt-5">Have you ever met someone at a festival and felt a connection, but didn't get their contact information? Or maybe you're looking for someone you met at a festival and want to reconnect? Fest Connection is here to help you find that missed connection.</p>
                         <p class="pt-5">Fill out a little bit of information about the connection you're looking for and some information about yourself. We'll do the best
@@ -57,8 +65,8 @@
                     </div>
                 </div>
 
-                <div id="rec_form" class="flex flex-container flex-col hidden">
-                    <h3 class="text-6xl font-semibold leading-relaxed text-gray-900 dark:text-white">Fill the Form out, best to memory!</h3>
+                <div id="rec_form" class="flex flex-container flex-col z-0 hidden">
+                    <h3 class="text-6xl font-semibold leading-relaxed text-white dark:text-white">Fill the Form out, best to memory!</h3>
                     <form id="missed_connection_form" class="flex flex-container flex-col max-w-5xl m-5 text-gray-400 text-lg">
                         <input id="cstoken" type="hidden" name="_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="user_id" value="001"><!-- BADLY DONE! NEED TO FIX -->
@@ -117,9 +125,9 @@
                 </div>
                 
                 <!-- This is where the content for the missed connections will go -->
-                <div id="rec_posts" class="flex flex-container flex-col hidden">
+                <div id="rec_posts" class="flex flex-container flex-col z-0 hidden">
                     <div class="filter"></div>
-                    <div class="body"></div>
+                    <div class="body scroll-smooth"></div>
                     <div class="buttons">
                     <div class="flex flex-container flex-row justify-center">
                         <div class="flex flex-container flex-row mx-5">
