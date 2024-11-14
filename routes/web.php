@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Route;
 */
 $C_NAMESPACE = "App\Http\Controllers\\";
 
+// Routes to pages
 Route::get('/', function () {
     return view('pages.home');
 });
@@ -26,6 +27,11 @@ Route::get('/reconnections', function () {
     return view('pages.reconnections');
 });
 
+Route::get('/login', function () {
+    return view('pages.login');
+});
+
+// Routes for retrieving and submitting posts and comments
 Route::get('/get_posts', $C_NAMESPACE . 'PostsController@get_posts');
 Route::get('/get_comments/{postId}', $C_NAMESPACE . 'PostsController@get_comments');
 

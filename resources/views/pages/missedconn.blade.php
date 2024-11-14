@@ -28,7 +28,7 @@
         
         <div class="relative sm:flex sm:justify-center sm:items-center lg:min-h-screen bg-dots-darker bg-center bg-gray-800/70 dark:bg-dots-lighter dark:bg-gray-900/70 selection:bg-red-500 selection:text-white z-0">
             <div id="video-bg">
-                <video class="missedconn" autoplay muted loop>
+                <video class="missedconn_video" autoplay muted loop>
                     <source src="/img/video/missedconn_bg.mp4" type="video/mp4">
                 </video>
             </div>

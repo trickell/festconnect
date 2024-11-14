@@ -46,7 +46,7 @@ class PostsController extends BaseController
         catch (\Exception $e) {
             return json_encode(['status' => 'error', 'message' => 'Comment submission failed', 'error' => $e->getMessage(), 'comment_data' => $data]);
         }
-        return json_encode(['status' => 'success', 'message' => 'Comment submitted successfully', 'comment_id' => $comment->id, 'comment_data' => $data]);
+        return json_encode(['status' => 'success', 'message' => 'Comment submitted successfully', 'comment_id' => $comment->id, 'user' => 'test', 'comment_data' => $data]);
     }
 
 }

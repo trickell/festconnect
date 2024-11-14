@@ -106,6 +106,18 @@ $(function(){
             dataType: 'json',
             success: function (data) {
                 console.info(data);
+                let c = data.comment_data;
+                $("#comments_"+c.post_id).append(`
+                    <div id="comm_`+ data.comment_id +`" class="flex flex-col text-base p-1 m-1 bg-sky-600/50 rounded-md">
+                        <div class="flex flex-row">
+                            <div class="flex flex-row p-1 text-slate-100">
+                                <h3 class="text-lg font-bold p-1">`+ data.user 
+                                +`<br/><span class="italic text-xs text-slate-500">`+ formatDate(today) +`</span></h3>
+                                <p class="text-base p-1">`+ c.comment +`</p>
+                            </div>
+                        </div>
+                    </div>
+                `);
             }
         });
     }
