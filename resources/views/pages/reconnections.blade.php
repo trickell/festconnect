@@ -25,6 +25,7 @@
         </style>
     </head>
     <body class="antialiased">
+        <div class="message-box hidden">Thanks for registering. Login!</div>
         
         <div class="relative flex scroll-smooth flex-col sm:justify-center sm:items-center min-h-screen bg-dots-darker bg-center bg-gray-800/70 dark:bg-dots-lighter dark:bg-gray-900/70 selection:bg-red-500 selection:text-white lg:max-w-4xl lg:mx-auto">
             <div id="video-bg">
@@ -69,7 +70,7 @@
                     <h3 class="text-6xl font-semibold leading-relaxed text-white dark:text-white">Fill the Form out, best to memory!</h3>
                     <form id="missed_connection_form" class="flex flex-container flex-col max-w-5xl m-5 text-gray-400 text-lg">
                         <input id="cstoken" type="hidden" name="_token" value="{{ csrf_token() }}">
-                        <input type="hidden" name="user_id" value="001"><!-- BADLY DONE! NEED TO FIX -->
+                        <input type="hidden" name="user_id" value=""><!-- BADLY DONE! NEED TO FIX -->
                         <div class="flex flex-container flex-row">
                             <label for="festival" class="text-xl">Festival Name:</label>
                             <select id="festival_name" name="festival" class="p-2 ml-4 rounded-sm" required>

@@ -1,44 +1,42 @@
 // import './bootstrap';
 
 const today = new Date();
-let postData = [
-    {
-        "id"   : 1,
-        "name" : "John Doe",
-        "user" : "johndoe",
-        "email": "hidden",
-        "festival": "Coachella",
-        "description": "I met you at Coachella and we had a great time. I lost your number and I want to reconnect.",
-        "date": today.toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'}),
-        "missedConnection": "Her name was Rebecca and she was wearing a red dress.",
-        "image": "https://via.placeholder.com/150", 
-        "comments" : [
-            {
-                "parent": null,
-                "id": 100,
-                "user": "rvissionfan",
-                "comment": "I hope you find her!",
-            },
-            {
-                "parent": 100,
-                "id": 101,
-                "user": "johndoe",
-                "comment": "Thanks! I hope so too!",
+
+// Stores the logged in user in a local js variable for js code to access
+const store_user = function(){
+    $.get('/get_user')
+        .done(function(data){
+            if(data.status == "error"){
+                window.location.replace("/login");
             }
-        ]
-    },
-    {
-        "id"   : 2,
-        "name" : "James Franco",
-        "email": "hidden",
-        "festival": "Lost Lands",
-        "description": "We met at Lost Lands on the rail at Levity and you had the most killer Totem! I lost your information and I want to reconnect.",
-        "date": today.toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'}), 
-        "missedConnection": "She went by Gothic Gypsy and was wearing a black and green striped dress.",
-        "image": "https://via.placeholder.com/150", 
-        "comments" : []
+            sessionStorage.setItem('user', data);
+        });
+}
+
+// This creates a messagebox of text as long as a div with class='message_box' exists in the body
+function messagebox(text){
+    $('.message-box').html(text).fadeIn();
+    setTimeout(() => {
+        $('.message-box').fadeOut();
+    }, 2000);
+}
+
+// Handles the filters for the filter select
+function filter_posts(filter, type){
+    console.log(filter,type);
+    switch(type){
+        case "festival":
+            console.log($('.post-container'));
+            $('.post-container').hide();
+            $('div[data-filter="'+ filter +'"]').fadeIn();
+            break;
+
+        case "reset":
+            $('.post-container').show();
+            $('select[name="festival"]').val("0");
+            break;
     }
-];
+}
 
 // Formats a date for Website use.
 function formatDate(date){
@@ -53,6 +51,10 @@ function getCSRFToken(){
 }
 
 $(function(){
+    // Store User
+    store_user();
+    const user = JSON.parse(sessionStorage.getItem('user')).user;
+
     // Take care of the click events on the missed connections pages
     $(".submitMissedConnections").click(function(){
         $("#rec_landing").hide();
@@ -66,6 +68,8 @@ $(function(){
         console.log("Form Submitted!");
         console.log($(this).serializeArray());
 
+        // Make sure the form is reading the correctid. 
+        $('input[name="user_id"]', form).val(user.id);
         // $.post("submit_post", $(this).serializeArray(), function(data){
         //     console.log(data);
         // });
@@ -111,13 +115,20 @@ $(function(){
                     <div id="comm_`+ data.comment_id +`" class="flex flex-col text-base p-1 m-1 bg-sky-600/50 rounded-md">
                         <div class="flex flex-row">
                             <div class="flex flex-row p-1 text-slate-100">
-                                <h3 class="text-lg font-bold p-1">`+ data.user 
+                                <h3 class="text-lg font-bold p-1">`+ user.username 
                                 +`<br/><span class="italic text-xs text-slate-500">`+ formatDate(today) +`</span></h3>
                                 <p class="text-base p-1">`+ c.comment +`</p>
                             </div>
                         </div>
                     </div>
                 `);
+                messagebox('Thanks for your comment!');
+
+                // Show comments and Scroll to new comment element
+                $("#comments_"+c.post_id).show();
+                $('html, body').animate({
+                    scrollTop: $("#comments_"+c.post_id+" :last-child").offset().top + 10
+                }, 2000);                
             }
         });
     }
@@ -137,12 +148,20 @@ $(function(){
             success: function (data) {
                 console.info(data);
                 posts = data;
+
+                // check if the data has already been appended once
+                
+                if(postCount == 0){
                 
                 $.each(posts, function(index, val){    
+                    // Checks the the post is turned off in DB, returns if so
                     if (val.turn_off == 1){ return; }
+                    // Checks if an image for the posts exists
+                    if (!val.image) { val.image = "/img/no-image.png" }
+                    
                     $("#rec_posts .body").append(`
-                        <div class="flex flex-col">
-                            <a href="/reconnections" class="flex flex-container flex-col">
+                        <div class="flex flex-col post-container" data-filter="`+ val.festival +`">
+                            <a href="#" class="flex flex-container flex-col">
                                 <div class="flex flex-col text-xl border-solid rounded-md border-2 text-gray-600 dark:text-gray-400 hover:text-red-400 p-5 m-2 hover:bg-slate-900/80">
                                     <div class="flex flex-container text-sm font-bold p-1 text-right justify-end">Posted on: `+ new Date(val.created_at).toDateString() +`</div>
                                     <div class="flex flex-col xl:flex-row">
@@ -181,7 +200,7 @@ $(function(){
                                         </div>
                                         <div id="submit_comment_`+ val.id +`" class="flex flex-col p-1 hidden">
                                             <form id="comment_form" class="flex flex-row p-1">
-                                                <input type="hidden" name="user_id" value="`+ val.user.id +`">
+                                                <input type="hidden" name="user_id" value="`+ user.id +`">
                                                 <input type="hidden" name="post_id" value="`+ val.id +`">
                                                 <input type="text" name="comment" class="p-2 ml-4 rounded-sm w-5/6" placeholder="Submit a Comment">
                                                 <button id="sub_comment" data-id="`+ val.id +`" class="p-2 m-2 w-1/6 bg-violet-900/50 rounded-md hover:bg-violet-900/80">Comment</button>
@@ -205,7 +224,7 @@ $(function(){
                                         <div id="comm_`+ c.id +`" class="flex flex-col text-base p-1 m-1 bg-sky-600/50 rounded-md">
                                             <div class="flex flex-row">
                                                 <div class="flex flex-row p-1 text-slate-100">
-                                                    <h3 class="text-lg font-bold p-1">`+ c.user 
+                                                    <h3 class="text-lg font-bold p-1">`+ c.username 
                                                     +`<br/><span class="italic text-xs text-slate-500">`+ formatDate(c.created_at) +`</span></h3>
                                                     <p class="text-base p-1">`+ c.comment +`</p>
                                                 </div>
@@ -265,6 +284,12 @@ $(function(){
                         }
                     });
                 });
+                postCount++;
+
+                } // End if statement
+                else {
+
+                }
             }
         });
 
@@ -274,7 +299,7 @@ $(function(){
                 <div class="flex flex-container flex-row px-3 py-2 m-5 bg-violet-900/50 rounded-md">
                     <h2 class="text-xl font-bold p-1 text-slate-50">Filter By:</h2>
                     <div class="flex flex-row">
-                        <div class="flex flex-col p-1">
+                        <div class="flex flex-row p-1">
                             <select name="festival" id="festival" class="p-2 ml-4 rounded-sm">
                                 <option value="0">Select a Festival</option>
                                 <optgroup label="EDM">                                    
@@ -294,10 +319,21 @@ $(function(){
                                 <option value="coachella">Coachella</option>
                                 <option value="other">Other</option>
                             </select>
+                            <button class="flex flex-row p-2 m-2 text-white bg-violet-700/50 rounded-md hover:bg-violet-600/80">
+                                Reset
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>`);
+        
+        // Handle how the filter event is handled
+        $("#rec_posts .filter select").on('change', function(e){
+            filter_posts($(this).val(),'festival');
+        });
+        $("#rec_posts .filter button").on('click', function(){
+            filter_posts(null,'reset');
+        });
     });
 
 });

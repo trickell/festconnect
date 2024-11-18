@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class PostsController extends BaseController
 {
@@ -17,13 +18,23 @@ class PostsController extends BaseController
     // Returns all the comments for a specific post
     public function get_comments($id)
     {
-        $comments = \App\Models\Posts::find($id)->comments;
+        $comments = DB::table('comments')
+                    ->join('users', 'users.id', '=','comments.user_id')
+                    ->select('users.username', 'comments.parent','comments.comment','comments.created_at')
+                    ->where('post_id', $id)
+                    ->get();
+
+        // $comments = \App\Models\Posts::find($id)->comments;
         return json_encode($comments);
     }
 
     // Handles the submission of a post
-    public function submit_post()
+    public function submit_post(Request $request)
     {
+        // Merge userid with data
+        $userid = $request->session()->only(['user'])['user']->id;
+        $request->merge(['user_id' => $userid]);
+
         $data = request()->except(['_token', '_method']);
 
         try {
@@ -36,10 +47,15 @@ class PostsController extends BaseController
     }
 
     // Handles any submission of comments
-    public function submit_comment()
+    public function submit_comment(Request $request)
     {
-        $data = request()->except(['_token', '_method']);
+        // Merge userid with data
+        $userid = $request->session()->only(['user'])['user']->id;
+        $request->merge(['user_id' => $userid]);
 
+        $data = request()->except(['_token', '_method']);      
+
+        return $data; 
         try {
             $comment = \App\Models\Comments::create($data);
         }

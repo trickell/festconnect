@@ -44,6 +44,29 @@ header {
     position: relative;
 }
 
+.error {
+    outline: red solid 2px;
+}
+.message-box::before{ 
+    display: block;
+    background-image: url("/public/img/svg-icons/checkmark.svg");
+    width:100px;
+    height:100px;
+ }
+.message-box{
+    position: fixed;
+    top:40%;
+    left:31%;
+    z-index: 200;
+    font-size: 3.2rem;
+    padding:35px;
+    border-radius:20px;
+    box-shadow: 5px 5px 10px #000;
+    color: rgba(123, 202, 255, 1);
+    outline: 2px solid #8200ec;
+    background: rgba(15, 22, 48, 0.9);
+}
+
 /* ====== FORM STYLES ======= */
 #missed_connection_form div {
     padding: 5px;
