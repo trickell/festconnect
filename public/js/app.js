@@ -5,10 +5,7 @@ const today = new Date();
 // Stores the logged in user in a local js variable for js code to access
 const store_user = function(){
     $.get('/get_user')
-        .done(function(data){
-            if(data.status == "error"){
-                window.location.replace("/login");
-            }
+        .done(function(data){            
             sessionStorage.setItem('user', data);
         });
 }
