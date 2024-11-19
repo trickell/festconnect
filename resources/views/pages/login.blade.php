@@ -29,7 +29,7 @@
         <div id="login-page" class="relative sm:flex sm:justify-center sm:items-center min-h-screen bg-dots-darker bg-center bg-gray-800/60 dark:bg-dots-lighter dark:bg-gray-900/70 selection:bg-red-500 selection:text-white">
             <div id="video-bg">
                 <video class="login_video" autoplay muted loop>
-                    <source src="/img/video/login_bg.mp4" type="video/mp4">
+                    <source src={{ asset('img/video/login_bg.mp4') }} type="video/mp4">
                 </video>
             </div>
 

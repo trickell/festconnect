@@ -30,7 +30,7 @@
         <div class="relative flex scroll-smooth flex-col sm:justify-center sm:items-center min-h-screen bg-dots-darker bg-center bg-gray-800/70 dark:bg-dots-lighter dark:bg-gray-900/70 selection:bg-red-500 selection:text-white lg:max-w-4xl lg:mx-auto">
             <div id="video-bg">
             <video class="missedconn_video" autoplay muted loop>
-                <source src="/img/video/reconnections_bg.mp4" type="video/mp4">
+                <source src={{ asset('img/video/reconnections_bg.mp4') }} type="video/mp4">
             </video>
             </div>
             

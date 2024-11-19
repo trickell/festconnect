@@ -27,7 +27,7 @@
         <div class="relative sm:flex sm:justify-center sm:items-center min-h-screen bg-dots-darker bg-center bg-gray-800/60 dark:bg-dots-lighter dark:bg-gray-900/70 selection:bg-red-500 selection:text-white">
             <div id="video-bg">
                 <video class="home_video" autoplay muted loop>
-                    <source src="/img/video/home_bg.mp4" type="video/mp4">
+                    <source src={{ asset('img/video/home_bg.mp4') }} type="video/mp4">
                 </video>
             </div>
             <div class="bg_hero sm:justify-center sm:items-center min-h-screen ">
