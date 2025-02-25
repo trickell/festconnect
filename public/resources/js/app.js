@@ -52,6 +52,18 @@ $(function(){
     store_user();
     const user = JSON.parse(sessionStorage.getItem('user')).user;
 
+    // Handle the hover event and animations for the festconnection logo
+    $(this).find(".fclogo_hover").hide();
+    const lswitch = $("#logo_switch")[0];
+    
+    $("#logo").hover(function(){
+        $(this).find(".fclogo_hover").fadeIn(1000).addClass("flicker-5");
+        
+        lswitch.play();
+    }, function(){
+        $(this).find(".fclogo_hover").fadeOut(1000).removeClass("flicker-5");
+    });
+
     // Take care of the click events on the missed connections pages
     $(".submitMissedConnections").click(function(){
         $("#rec_landing").hide();
@@ -66,7 +78,7 @@ $(function(){
         console.log($(this).serializeArray());
 
         // Make sure the form is reading the correctid. 
-        $('input[name="user_id"]', form).val(user.id);
+        $('input[name="user_id"]', $(this)).val(user.id);
         // $.post("submit_post", $(this).serializeArray(), function(data){
         //     console.log(data);
         // });
@@ -88,6 +100,8 @@ $(function(){
                 $(".formSubmittedBtn").click();
             }
         });
+
+       
     });
 
     // Define variables needed for viewing posts
@@ -293,7 +307,7 @@ $(function(){
         // Filter Bar
         $("#rec_posts .filter").html(`
             <div class="flex flex-row">
-                <div class="flex flex-container flex-row px-3 py-2 m-5 bg-violet-900/50 rounded-md">
+                <div class="flex flex-container flex-row px-3 py-2 mx-5 my-3 bg-violet-900/50 rounded-md">
                     <h2 class="text-xl font-bold p-1 text-slate-50">Filter By:</h2>
                     <div class="flex flex-row">
                         <div class="flex flex-row p-1">
@@ -333,4 +347,5 @@ $(function(){
         });
     });
 
+    $("#logo").click();
 });

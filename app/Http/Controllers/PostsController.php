@@ -24,6 +24,8 @@ class PostsController extends BaseController
                     ->where('post_id', $id)
                     ->get();
 
+        // $comments = DB::table('comments')->join('users', 'users.id', '=','comments.user_id');
+
         // $comments = \App\Models\Posts::find($id)->comments;
         return json_encode($comments);
     }
@@ -55,7 +57,7 @@ class PostsController extends BaseController
 
         $data = request()->except(['_token', '_method']);      
 
-        return $data; 
+        // return $data; 
         try {
             $comment = \App\Models\Comments::create($data);
         }

@@ -1,19 +1,17 @@
 
-<header>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <a class="navbar-brand" href="{{ view('pages.home') }}">Laravel Blog</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav
-                <li class="nav-item active">
-                    <a class="nav-link" href="{{ view('pages.home') }}">Home</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{  }}">Blog</a>
-                </li>
-            </ul>
-        </div>
+<header class="justify-center flex-col">
+    <nav class="text-white-500 text-center flex flex-row z-0">
+        <ul class="flex flex-row mx-auto z-0">
+            <li class="p-5 m-2 text-slate-500 bg-violet-950/50 text-xl hover:text-slate-200 hover:bg-violet-900/80 hover:border-1 hover:border-violet-500 hover:rounded-sm"><a htext-slate-200 "><a href="{{ url('/') }}">Home</a></li>
+            <li class="p-5 m-2 text-slate-500 bg-violet-950/50 text-xl hover:text-slate-200 hover:bg-violet-900/80 hover:border-1 hover:border-violet-500 hover:rounded-sm"><a href="{{ url('missed_connections') }}">Missed Connections</a></li>
+            <li class="p-5 m-2 text-slate-500 bg-violet-950/50 text-xl hover:text-slate-200 hover:bg-violet-900/80 hover:border-1 hover:border-violet-500 hover:rounded-sm"><a href="{{ url('about') }}">About</a></li>
+            <li class="p-5 m-2 text-slate-500 bg-violet-950/50 text-xl hover:text-slate-200 hover:bg-violet-900/80 hover:border-1 hover:border-violet-500 hover:rounded-sm"><a href="url('contact') }}">Contact a Moderator</a></li>
+
+            <li data-id="loginTrue" class="justify-right m-2 p-5 ml-20 text-slate-500 bg-sky-950/50 text-xl hover:text-slate-200 hover:bg-sky-800/80 hover:border-1 hover:border-sky-500 hover:rounded-sm">
+                <a class="login" href="/login">Login</a>
+                <a class="logout" href="/logout">Logout</a>
+            </li>
+        </ul>
+        
     </nav>
 </header>
