@@ -53,7 +53,7 @@
                         <input id="cstoken" type="hidden" name="_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="user_id" value=""><!-- BADLY DONE! NEED TO FIX -->
                         <div class="flex flex-container flex-row">
-                            <label for="festival" class="text-xl">Festival Name:</label>
+                            <label for="festival" class="text-xl">Festival Names:</label>
                             <select id="festival_name" name="festival" class="p-2 ml-4 rounded-sm" required>
                                 <option value="0">Select a Festival</option>
                                 <optgroup label="EDM">                                    
