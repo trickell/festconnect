@@ -10,13 +10,13 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,600&display=swap" rel="stylesheet" />
         <script src="https://cdn.tailwindcss.com"></script>
-        <link href={{ asset('/public/css/app.css') }} rel="stylesheet">
+        <link href="https://orange-winner-xrjx44w6pvfvqvw-8000.app.github.dev/public/css/app.css" rel="stylesheet">
         
         <!-- Scripts -->        
         <script  src="https://code.jquery.com/jquery-3.7.1.min.js"
         integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
         crossorigin="anonymous"></script>
-        <script src={{ asset('/public/js/app.js') }}></script>
+        <!--<script src={{ asset('/public/js/app.js') }}></script>-->
 
         <!-- Styles -->
         <style>
