@@ -123,7 +123,7 @@
                 <div class="relative">
                     <select id="festival_filter"
                         class="bg-white/10 text-white text-sm font-bold uppercase tracking-widest px-4 py-3 rounded-full border border-white/10 focus:outline-none hover:bg-white/20 transition cursor-pointer appearance-none pr-10">
-                        <option value="">Select a Festival</option>
+                        <option value="">All</option>
                         <optgroup label="EDM">
                             <option value="lostLands">Lost Lands</option>
                             <option value="electricforest">Electric Forest</option>
