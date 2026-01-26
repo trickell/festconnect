@@ -24,8 +24,16 @@ Route::get('/missed_connections', function () {
     return view('pages.missedconn');
 });
 
+Route::get('/about', function () {
+    return view('pages.about');
+});
+
+Route::get('/contact', function () {
+    return view('pages.contact');
+});
+
 Route::get('/reconnections', function (Request $request) {
-    if (!$request->session()->has(['user'])){
+    if (!$request->session()->has(['user'])) {
         return view('pages.login');
     }
     return view('pages.reconnections');
@@ -47,6 +55,17 @@ Route::get('/get_user', $C_NAMESPACE . 'UserController@get_user');
 // Post Routes for Post / Comment Submission
 Route::post('/submit_post', $C_NAMESPACE . 'PostsController@submit_post');
 Route::post('/submit_comment', $C_NAMESPACE . 'PostsController@submit_comment');
+
+// Share Zone and Typing routes
+Route::get('/share_zone', function (Request $request) {
+    if (!$request->session()->has(['user'])) {
+        return view('pages.login');
+    }
+    return view('pages.sharezone');
+});
+Route::post('/update_typing', $C_NAMESPACE . 'PostsController@update_typing');
+Route::post('/delete_post/{id}', $C_NAMESPACE . 'PostsController@delete_post');
+Route::get('/get_typing_status', $C_NAMESPACE . 'PostsController@get_typing_status');
 
 // Route::get('/create_comment', function(){
 //     try {

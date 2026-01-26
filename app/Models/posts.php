@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class posts extends Model
+class Posts extends Model
 {
     use HasFactory;
     protected $fillable = [
@@ -14,19 +14,22 @@ class posts extends Model
         'missed_conn',
         'post',
         'mc_image',
-        'created_at',
-        'updated_at',
-        '_token',
-        '_method'
+        'post_type',
+        'category',
+        'images'
     ];
 
-    public function User()
+    protected $casts = [
+        'images' => 'array'
+    ];
+
+    public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
-    public function Comments()
+    public function comments()
     {
-        return $this->hasMany(comments::class, 'post_id', 'id');
+        return $this->hasMany(Comments::class, 'post_id', 'id');
     }
 }

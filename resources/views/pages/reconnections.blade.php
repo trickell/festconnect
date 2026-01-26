@@ -1,123 +1,595 @@
 @extends('layouts.master')
 
-@section('title','Fest Connection || Home')
+@section('title', 'Fest Connection || Reconnections')
 
 @section('content')
-        
-        <div class="relative flex scroll-smooth flex-col sm:justify-center sm:items-center min-h-screen bg-dots-darker bg-center bg-gray-800/70 dark:bg-dots-lighter dark:bg-gray-900/70 selection:bg-red-500 selection:text-white lg:max-w-4xl lg:mx-auto">
-            <div id="video-bg">
-            <video class="missedconn_video" autoplay muted loop>
-                <source src={{ asset('img/video/reconnections_bg.mp4') }} type="video/mp4">
-            </video>
-            </div>
-            
-            <header class="justify-center flex-col">
-            <nav class="text-white-500 text-center flex flex-row z-0">
-                <ul class="flex flex-row mx-auto z-0">
-                    <li class="p-5 m-2 text-slate-500 bg-violet-950/50 text-xl hover:text-slate-200 hover:bg-violet-900/80 hover:border-1 hover:border-violet-500 hover:rounded-sm"><a htext-slate-200 "><a href="/">Home</a></li>
-                    <li class="p-5 m-2 text-slate-500 bg-violet-950/50 text-xl hover:text-slate-200 hover:bg-violet-900/80 hover:border-1 hover:border-violet-500 hover:rounded-sm"><a href="/missed_connections">Missed Connections</a></li>
-                    <li class="p-5 m-2 text-slate-500 bg-violet-950/50 text-xl hover:text-slate-200 hover:bg-violet-900/80 hover:border-1 hover:border-violet-500 hover:rounded-sm"><a href="/about">About</a></li>
-                    <li class="p-5 m-2 text-slate-500 bg-violet-950/50 text-xl hover:text-slate-200 hover:bg-violet-900/80 hover:border-1 hover:border-violet-500 hover:rounded-sm"><a href="/contact">Contact a Moderator</a></li>
-                    <li class="justify-right m-2 p-5 ml-20 text-slate-500 bg-sky-950/50 text-xl hover:text-slate-200 hover:bg-sky-800/80 hover:border-1 hover:border-sky-500 hover:rounded-sm">
-                        <a href="/logout">Logout</a>
-                    </li>
-                </ul>
-                
-            </nav>
-            </header>
-            
-            <div id="top_spacer" class="flex flex-container flex-col h-20 mt-10"></div>
+<div class="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
+    <!-- Video Background -->
+    <x-video-background source="img/video/reconnections_bg.mp4" />
 
-            <div class="text-white-500 text-center flex flex-col">           
-                <div class="loader z-0 hidden"></div>
-                <div id="rec_landing" class="flex flex-container flex-col z-0">
-                    <h1 class="text-6xl font-semibold leading-relaxed text-white dark:text-white mt-100">Rekindle / Find a Missed Connection</h1>
-                    <div class="missed_text flex flex-container flex-col max-w-5xl m-5 text-gray-400 text-lg">
-                        <p class="pt-5">Have you ever met someone at a festival and felt a connection, but didn't get their contact information? Or maybe you're looking for someone you met at a festival and want to reconnect? Fest Connection is here to help you find that missed connection.</p>
-                        <p class="pt-5">Fill out a little bit of information about the connection you're looking for and some information about yourself. We'll do the best
-                            to help find that person. If a connection is found, we will notify you via email! </p>  
-                    </div> 
-                    <div class="flex flex-container flex-row justify-center">
-                        <div class="flex flex-container flex-row mx-5">
-                            <button class="p-2 px-6 mt-4 bg-red-500 text-white rounded-lg submitMissedConnections">Submit a Missed Connection</button>
+    <!-- Main Content -->
+    <div class="relative z-10 container mx-auto px-4 py-12 flex flex-col items-center max-w-4xl">
+
+        <!-- Loading State -->
+        <div class="loader z-50 hidden absolute inset-0 bg-black/50 flex items-center justify-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-500"></div>
+        </div>
+
+        <a href="{{ url('share_zone') }}"
+            class="relative w-1/2 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-sm font-bold shadow-lg mb-10">
+            Visit Festival Share Zone
+        </a>
+
+        <!-- Landing View -->
+        <div id="rec_landing" class="flex flex-col items-center text-center space-y-8 animate-fade-in">
+
+            <h1
+                class="text-4xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 drop-shadow-sm">
+                Make a Connection
+            </h1>
+
+            <div class="bg-white/10 backdrop-blur-md border border-white/20 p-6 md:p-8 rounded-2xl shadow-xl max-w-2xl">
+                <p class="text-gray-200 text-lg leading-relaxed mb-4">
+                    Have you ever met someone at a festival and felt a connection, but didn't get their contact
+                    information?
+                    <span class="block mt-2 font-semibold text-white">Fest Connection is here to help you find that
+                        missed connection.</span>
+                </p>
+                <p class="text-gray-300 text-sm">
+                    Fill out a little bit of information about the connection you're looking for and yourself. We'll do
+                    our best to help!
+                </p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 w-full justify-center">
+                <button
+                    class="submitMissedConnections w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-lg shadow-lg transform hover:scale-105 transition-all">
+                    Submit a Connection
+                </button>
+                <button
+                    class="viewMissedConnections w-full sm:w-auto px-8 py-3 bg-white/10 hover:bg-white/20 border border-white/30 text-white font-bold rounded-lg shadow-lg backdrop-blur-sm transition-all">
+                    View Posts
+                </button>
+            </div>
+        </div>
+
+        <!-- Form View (Hidden Default) -->
+        <div id="rec_form" class="hidden w-full max-w-2xl">
+            <div class="bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-2xl shadow-2xl">
+                <h3 class="text-2xl font-bold text-white mb-6 text-center">Tell us about them</h3>
+
+                <form id="missed_connection_form" class="space-y-6">
+                    @csrf
+                    <input type="hidden" name="user_id" value="{{ optional(session('user'))->id }}">
+
+                    <div class="space-y-2">
+                        <label for="festival_name"
+                            class="block text-purple-300 font-semibold text-sm uppercase tracking-wide">Festival
+                            Name</label>
+                        <select id="festival_name" name="festival"
+                            class="w-full px-4 py-3 rounded-lg bg-black/40 border border-white/10 text-white focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition"
+                            required>
+                            <option value="">Select a Festival</option>
+                            <optgroup label="EDM">
+                                <option value="lostLands">Lost Lands</option>
+                                <option value="electricforest">Electric Forest</option>
+                                <option value="solfest">Sol Fest</option>
+                                <option value="edc">Electric Daisy Carnival</option>
+                                <option value="umf">Ultra Music Festival</option>
+                            </optgroup>
+                            <optgroup label="Rock">
+                                <option value="louderthanlife">Louder Than Life</option>
+                                <option value="aftershock">Aftershock</option>
+                                <option value="bourbonandbeyond">Bourbon And Beyond</option>
+                            </optgroup>
+                            <option value="lollapalooza">Lollapalooza</option>
+                            <option value="Bonnaroo">Bonnaroo</option>
+                            <option value="coachella">Coachella</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label for="missedConnection"
+                            class="block text-purple-300 font-semibold text-sm uppercase tracking-wide">Who was
+                            it?</label>
+                        <textarea id="missedConnection" name="missed_conn"
+                            class="w-full px-4 py-3 rounded-lg bg-black/40 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition h-24"
+                            placeholder="Detailed description of the person..." required></textarea>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label for="optConnectImg"
+                            class="block text-purple-300 font-semibold text-sm uppercase tracking-wide">Upload Image
+                            (Optional)</label>
+                        <input type="file" id="optConnectImg" name="optConnectImg"
+                            class="w-full px-4 py-3 rounded-lg bg-black/40 border border-white/10 text-gray-300 focus:outline-none transition file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700"
+                            accept="image/*,.pdf">
+                    </div>
+
+                    <div class="space-y-2">
+                        <label for="description"
+                            class="block text-purple-300 font-semibold text-sm uppercase tracking-wide">How we
+                            met</label>
+                        <textarea id="description" name="post"
+                            class="w-full px-4 py-3 rounded-lg bg-black/40 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition h-32"
+                            placeholder="Where in the festival? What happened?" required></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label for="your_name"
+                                class="block text-purple-300 font-semibold text-sm uppercase tracking-wide">Your
+                                Name</label>
+                            <input type="text" id="your_name" name="name"
+                                class="w-full px-4 py-3 rounded-lg bg-black/40 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition"
+                                placeholder="Real Name or Festival Alias" required>
                         </div>
-                        <div class="flex flex-container flex-row">
-                            <button class="p-2 px-6 mt-4 bg-red-500 text-white rounded-lg viewMissedConnections">View Missed Connections</button>
+                        <div class="space-y-2">
+                            <label for="your_email"
+                                class="block text-purple-300 font-semibold text-sm uppercase tracking-wide">Your
+                                Email</label>
+                            <input type="email" id="your_email" name="email"
+                                class="w-full px-4 py-3 rounded-lg bg-black/40 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition"
+                                placeholder="We notify you here!" required>
                         </div>
                     </div>
-                </div>
 
-                <div id="rec_form" class="flex flex-container flex-col z-0 hidden">
-                    <h3 class="text-6xl font-semibold leading-relaxed text-white dark:text-white">Fill the Form out, best to memory!</h3>
-                    <form id="missed_connection_form" class="flex flex-container flex-col max-w-5xl m-5 text-gray-400 text-lg">
-                        <input id="cstoken" type="hidden" name="_token" value="{{ csrf_token() }}">
-                        <input type="hidden" name="user_id" value=""><!-- BADLY DONE! NEED TO FIX -->
-                        <div class="flex flex-container flex-row">
-                            <label for="festival" class="text-xl">Festival Names:</label>
-                            <select id="festival_name" name="festival" class="p-2 ml-4 rounded-sm" required>
-                                <option value="0">Select a Festival</option>
-                                <optgroup label="EDM">                                    
-                                    <option value="lostLands">Lost Lands</option>
-                                    <option value="electricforest">Electric Forest</option>
-                                    <option value="solfest">Sol Fest</option>                                                                   
-                                    <option value="edc">Electric Daisy Carnival</option>
-                                    <option value="umf">Ultra Music Festival</option>
-                                </optgroup>
-                                <optgroup label="Rock">
-                                    <option value="louderthanlife">Louder Than Life</option>
-                                    <option value="aftershock">Aftershock</option>\
-                                    <option value="bourbonandbeyond">Bourbon And Beyond</option>
-                                </optgroup>
-                                <option value="lollapalooza">Lollapalooza</option> 
-                                <option value="Bonnaroo">Bonnaroo</option>
-                                <option value="coachella">Coachella</option>
-                                <option value="other">Other</option>
-                            </select>
+                    <div class="flex flex-col space-y-4 pt-4">
+                        <p class="text-xs text-gray-500 text-center italic">After submitting, you will be able to see
+                            other posts.</p>
+                        <div class="flex gap-4">
+                            <button type="submit"
+                                class="flex-1 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold rounded-lg shadow-lg transform hover:scale-[1.02] transition-all">
+                                Submit
+                            </button>
+                            <button type="button"
+                                class="viewMissedConnections flex-1 py-3 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-lg shadow-lg transition-all">Cancel
+                                / View Posts</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
 
-                            <!--<input type="text" id="festival_name" name="festival_name" class="p-2 ml-4 rounded-lg" required>-->
-                        </div>
-                        <div class="flex flex-container flex-row">
-                            <label for="missed_conn" class="text-xl">Who is the Missed Connection? <i class="text-sm">ex. Detailed description of the person</i></label>
-                            <textarea id="missedConnection" name="missed_conn" class="p-2 ml-4 rounded-lg"></textarea>
+        <!-- Posts View (Hidden Default) -->
+        <div id="rec_posts" class="hidden w-full max-w-5xl">
+            <div
+                class="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-xl flex justify-between items-center mb-6">
+                <h2 class="text-2xl md:text-3xl font-bold text-white">Recent Posts</h2>
+                <button
+                    class="submitMissedConnections px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-full text-sm font-bold transition shadow-lg">
+                    + New Post
+                </button>
+            </div>
 
-                            <!-- Optional: Upload an Image <input type="file" id="optConnectImg" name="optConnectImg" class="p-2 ml-4 rounded-lg" accept="image/*,.pdf"> -->
+            <div class="filter mb-6 flex justify-end animate-fade-in">
+                <select id="festival_filter"
+                    class="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-purple-500 transition">
+                    <option value="all">All Festivals</option>
+                    <option value="lostLands">Lost Lands</option>
+                    <option value="electricforest">Electric Forest</option>
+                    <option value="solfest">Sol Fest</option>
+                    <option value="edc">Electric Daisy Carnival</option>
+                    <option value="umf">Ultra Music Festival</option>
+                    <option value="louderthanlife">Louder Than Life</option>
+                    <option value="aftershock">Aftershock</option>
+                    <option value="bourbonandbeyond">Bourbon And Beyond</option>
+                    <option value="lollapalooza">Lollapalooza</option>
+                    <option value="Bonnaroo">Bonnaroo</option>
+                    <option value="coachella">Coachella</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+
+            <div class="body grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Posts will be injected here via JS -->
+            </div>
+        </div>
+
+        <!-- Post Detail View (Hidden Default) -->
+        <div id="rec_post_detail" class="hidden w-full max-w-4xl animate-fade-in">
+            <!-- Back Button -->
+            <button id="close_detail_btn"
+                class="mb-6 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg flex items-center transition space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                <span>Back to Posts</span>
+            </button>
+
+            <!-- Post Content -->
+            <div id="detail_content"
+                class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 md:p-8 shadow-2xl mb-8">
+                <!-- Content injected via JS -->
+            </div>
+
+            <!-- Comments Section -->
+            <div class="bg-black/40 backdrop-blur-sm border border-white/10 rounded-2xl p-6 md:p-8">
+                <h3 class="text-xl font-bold text-white mb-6">Comments</h3>
+
+                @if(session('user'))
+                    <!-- Comment Form -->
+                    <form id="comment_form" class="mb-8">
+                        @csrf
+                        <input type="hidden" name="post_id" id="detail_post_id">
+                        <input type="hidden" name="parent" id="detail_parent_id"> <!-- For replies -->
+                        <div class="flex gap-4">
+                            <textarea name="comment"
+                                class="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition"
+                                placeholder="Write a comment..." rows="2" required></textarea>
+                            <button type="submit"
+                                class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg shadow-lg self-start whitespace-nowrap transition">Post</button>
                         </div>
-                        <div class="flex flex-container flex-row">
-                            <label>Optional:</label> Upload an Image <input type="file" id="optConnectImg" name="optConnectImg" class="p-2 ml-4 rounded-lg" accept="image/*,.pdf">
-                        </div>
-                        <div class="flex flex-container flex-row">
-                            <label for="post" class="text-xl">Detailed Description of how we met: <i class="text-sm">ex. Where in the festival?</i></label>
-                            <textarea id="description" name="post" class="p-2 ml-4 rounded-lg" required></textarea>
-                        </div>
-                        <div class="flex flex-container flex-row">
-                            <label for="your_name" class="text-xl">Your Name:</label>
-                            <input type="text" id="your_name" name="name" class="p-2 ml-4 rounded-lg" placeholder="Real Name or Festival Name" required>
-                        </div>
-                        <div class="flex flex-container flex-row">
-                            <label for="your_email" class="text-xl">Your Email: (We notify you when they connect with you!)</label>
-                            <input type="text" id="your_email" name="email" class="p-2 ml-4 rounded-lg" required>
-                        </div>
-                        <div class="flex flex-container flex-row text-right">
-                            <i class="m-5">After Submitting, You will be brought to everyone elses posts!</i>
-                            <button type="submit" class="p-2 px-6 mt-4 bg-red-500 text-white rounded-lg text-right">Submit</button>
-                            <button class="p-2 px-6 mt-4 bg-red-500 text-white rounded-lg text-right viewMissedConnections mx-10">View Posts</button>
+                        <div id="replying_to_notice"
+                            class="hidden text-sm text-purple-300 mt-2 flex justify-between items-center">
+                            <span>Replying to a comment...</span>
+                            <button type="button" id="cancel_reply" class="text-gray-400 hover:text-white underline">Cancel
+                                Reply</button>
                         </div>
                     </form>
-                    <a class="absolute left-9000 rounded-lg text-right formSubmittedBtn"></a>
-                </div>
-                
-                <!-- This is where the content for the missed connections will go -->
-                <div id="rec_posts" class="flex flex-container flex-col z-0 hidden">
-                    <div class="filter"></div>
-                    <div class="body scroll-smooth"></div>
-                    <div class="buttons">
-                    <div class="flex flex-container flex-row justify-center">
-                        <div class="flex flex-container flex-row mx-5">
-                            <button class="p-2 px-6 mt-4 bg-red-500 text-white rounded-lg submitMissedConnections">Submit a Missed Connection</button>
-                        </div>
+                @else
+                    <div class="mb-8 p-4 bg-purple-900/30 border border-purple-500/30 rounded-lg text-center">
+                        <p class="text-purple-200">Please <a href="{{ url('/login') }}"
+                                class="text-white font-bold hover:underline">log in</a> to leave a comment.</p>
                     </div>
-                    </div>
+                @endif
+
+                <!-- Comments List -->
+                <div id="comments_container" class="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                    <!-- Comments injected via JS -->
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const landing = document.getElementById('rec_landing');
+        const formDiv = document.getElementById('rec_form');
+        const postsDiv = document.getElementById('rec_posts');
+        const detailDiv = document.getElementById('rec_post_detail');
+        const form = document.getElementById('missed_connection_form');
+        const postsContainer = postsDiv.querySelector('.body');
+        const filterSelect = document.getElementById('festival_filter');
+
+        // Detail Elements
+        const closeDetailBtn = document.getElementById('close_detail_btn');
+        const detailContent = document.getElementById('detail_content');
+        const commentsContainer = document.getElementById('comments_container');
+        const commentForm = document.getElementById('comment_form');
+        const detailPostIdInput = document.getElementById('detail_post_id');
+        const detailParentIdInput = document.getElementById('detail_parent_id');
+        const replyingToNotice = document.getElementById('replying_to_notice');
+        const cancelReplyBtn = document.getElementById('cancel_reply');
+
+        let allPosts = []; // Store fetched posts for filtering
+
+        // --- View Switching Logic ---
+        const hideAllViews = () => {
+            landing.classList.add('hidden');
+            postsDiv.classList.add('hidden');
+            formDiv.classList.add('hidden');
+            detailDiv.classList.add('hidden');
+        };
+
+        const switchToForm = () => {
+            hideAllViews();
+            formDiv.classList.remove('hidden');
+        };
+
+        const switchToPosts = () => {
+            hideAllViews();
+            postsDiv.classList.remove('hidden');
+            // Also reset filter if desired, or keep it
+        };
+
+        const switchToDetail = () => {
+            hideAllViews();
+            detailDiv.classList.remove('hidden');
+        };
+
+        // --- Data Fetching Logic ---
+        const fetchAndRenderPosts = async () => {
+            try {
+                // postsContainer.innerHTML = '<div class="col-span-full text-center text-white">Loading...</div>';
+                const response = await fetch('/get_posts');
+                allPosts = await response.json();
+                applyFilterAndRender();
+            } catch (error) {
+                console.error('Error fetching posts:', error);
+                postsContainer.innerHTML = '<p class="text-white text-center col-span-full">Failed to load posts.</p>';
+            }
+        };
+
+        const applyFilterAndRender = () => {
+            const filterValue = filterSelect.value;
+            let filtered = allPosts;
+
+            if (filterValue !== 'all') {
+                filtered = allPosts.filter(p => p.festival === filterValue);
+            }
+
+            // Sort newest first
+            filtered.sort((a, b) => b.id - a.id);
+            renderPosts(filtered);
+        };
+
+        const renderPosts = (posts) => {
+            postsContainer.innerHTML = '';
+
+            if (!posts || posts.length === 0) {
+                postsContainer.innerHTML = '<p class="text-white text-center col-span-full opacity-70">No connections found.</p>';
+                return;
+            }
+
+            posts.forEach(post => {
+                const imageUrl = post.mc_image ? `/${post.mc_image}` : 'https://images.unsplash.com/photo-1493225255756-d9584f8606e9?auto=format&fit=crop&q=80&w=2070';
+
+                const card = document.createElement('div');
+                card.className = 'bg-white/5 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden hover:bg-white/10 transition duration-300 animate-fade-in-up cursor-pointer';
+                card.innerHTML = `
+                    <div class="relative h-48 w-full group overflow-hidden">
+                        <img src="${imageUrl}" alt="Post Image" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
+                        <div class="absolute top-2 right-2 bg-purple-600/80 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-white uppercase tracking-wider shadow-sm">
+                            ${post.festival || 'Festival'}
+                        </div>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="text-lg font-bold text-white mb-2 line-clamp-1">${post.user ? post.user.name : 'Someone'} is looking...</h3>
+                        <p class="text-gray-300 text-sm line-clamp-3 leading-relaxed mb-4">${post.missed_conn || post.post}</p>
+                        
+                        <div class="pt-4 border-t border-white/10 flex justify-between items-center text-xs text-gray-400">
+                            <span>${new Date(post.created_at).toLocaleDateString()}</span>
+                            <span class="text-purple-300 group-hover:text-purple-200 transition">Read More &rarr;</span>
+                        </div>
+                    </div>
+                `;
+
+                // Click to view detail
+                card.addEventListener('click', () => openPostDetail(post));
+                postsContainer.appendChild(card);
+            });
+        };
+
+        // --- Detail View Logic ---
+        const openPostDetail = async (post) => {
+            // Render Post Content
+            const imageUrl = post.mc_image ? `/${post.mc_image}` : 'https://images.unsplash.com/photo-1493225255756-d9584f8606e9?auto=format&fit=crop&q=80&w=2070';
+
+            detailContent.innerHTML = `
+                <div class="flex flex-col md:flex-row gap-6 md:gap-8">
+                    <div class="w-full md:w-1/2 rounded-xl overflow-hidden shadow-lg h-64 md:h-96">
+                        <img src="${imageUrl}" class="w-full h-full object-cover">
+                    </div>
+                    <div class="w-full md:w-1/2 flex flex-col justify-center">
+                        <div class="inline-block self-start bg-purple-600 px-3 py-1 rounded-full text-xs font-bold text-white uppercase tracking-wider mb-4">
+                            ${post.festival}
+                        </div>
+                        <h2 class="text-3xl font-bold text-white mb-4">Looking for: <span class="text-purple-300">${post.missed_conn}</span></h2>
+                        <div class="prose prose-invert">
+                            <p class="text-gray-300 text-lg leading-relaxed mb-6">${post.post}</p>
+                        </div>
+                        <div class="mt-auto pt-4 border-t border-white/10 text-sm text-gray-400">
+                            Posted by <span class="text-white font-semibold">${post.user ? post.user.name : 'Unknown'}</span> on ${new Date(post.created_at).toLocaleDateString()}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Setup Comment Form
+            if (detailPostIdInput) {
+                detailPostIdInput.value = post.id;
+                detailParentIdInput.value = ''; // Reset parent
+                replyingToNotice.classList.add('hidden');
+            }
+
+            // Switch view
+            switchToDetail();
+
+            // Fetch Comments
+            fetchComments(post.id);
+        };
+
+        const fetchComments = async (postId) => {
+            try {
+                commentsContainer.innerHTML = '<p class="text-gray-400 text-center">Loading comments...</p>';
+                const response = await fetch(`/get_comments/${postId}`);
+                const comments = await response.json();
+                renderComments(comments);
+            } catch (error) {
+                console.error(error);
+                commentsContainer.innerHTML = '<p class="text-red-400 text-center">Failed to load comments.</p>';
+            }
+        };
+
+        const renderComments = (comments) => {
+            commentsContainer.innerHTML = '';
+            if (!comments || comments.length === 0) {
+                commentsContainer.innerHTML = '<p class="text-gray-400 text-center py-4">No comments yet.</p>';
+                return;
+            }
+
+            const commentMap = {};
+            const roots = [];
+
+            // First pass: Build map
+            comments.forEach(c => {
+                c.children = [];
+                commentMap[c.id] = c;
+            });
+
+            // Second pass: Build tree
+            comments.forEach(c => {
+                if (c.parent && commentMap[c.parent]) {
+                    commentMap[c.parent].children.push(c);
+                } else {
+                    roots.push(c);
+                }
+            });
+
+            const createCommentNode = (c, level = 0) => {
+                const node = document.createElement('div');
+                node.className = `bg-white/5 rounded-lg p-4 border border-white/5 ${level > 0 ? 'ml-6 md:ml-12 mt-2 border-l-2 border-l-purple-500/50' : ''}`;
+
+                // Format relative time if possible or just use locale string
+                const timeStr = new Date(c.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+
+                node.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                         <span class="font-bold text-purple-300 text-sm">${c.user_name || 'User'}</span>
+                         <span class="text-xs text-gray-500">${timeStr}</span>
+                    </div>
+                    <p class="text-gray-200 text-sm mb-3">${c.comment}</p>
+                    ${commentForm ? `<button class="text-xs text-gray-400 hover:text-white flex items-center gap-1 transition reply-btn" data-id="${c.id}" data-user="${c.user_name}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg> Reply
+                    </button>` : ''}
+                `;
+
+                // Reply Action
+                const replyBtn = node.querySelector('.reply-btn');
+                if (replyBtn) {
+                    replyBtn.addEventListener('click', () => {
+                        detailParentIdInput.value = c.id;
+                        replyingToNotice.classList.remove('hidden');
+                        replyingToNotice.querySelector('span').innerText = `Replying to ${c.user_name}...`;
+                        document.querySelector('textarea[name="comment"]').focus();
+                        document.querySelector('textarea[name="comment"]').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    });
+                }
+
+                return node;
+            };
+
+            const appendRecursive = (list, container, level) => {
+                list.forEach(c => {
+                    const el = createCommentNode(c, level);
+                    container.appendChild(el);
+                    if (c.children && c.children.length > 0) {
+                        appendRecursive(c.children, container, level + 1);
+                    }
+                });
+            };
+
+            appendRecursive(roots, commentsContainer, 0);
+        };
+
+        // --- Event Listeners ---
+
+        // Navigation
+        const showPosts = () => {
+            switchToPosts();
+            fetchAndRenderPosts();
+        };
+
+        document.querySelectorAll('.submitMissedConnections').forEach(btn => {
+            btn.addEventListener('click', switchToForm);
+        });
+
+        document.querySelectorAll('.viewMissedConnections').forEach(btn => {
+            btn.addEventListener('click', showPosts);
+        });
+
+        if (closeDetailBtn) {
+            closeDetailBtn.addEventListener('click', switchToPosts);
+        }
+
+        // Cancel Reply
+        if (cancelReplyBtn) {
+            cancelReplyBtn.addEventListener('click', () => {
+                detailParentIdInput.value = '';
+                replyingToNotice.classList.add('hidden');
+            });
+        }
+
+        // Filter Change
+        if (filterSelect) {
+            filterSelect.addEventListener('change', applyFilterAndRender);
+        }
+
+        // Initialize view
+        if (window.location.hash === '#posts') {
+            showPosts();
+        }
+
+        // --- Form Submissions ---
+
+        // Post Submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerText;
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Submitting...';
+
+            const formData = new FormData(form);
+
+            try {
+                const response = await fetch('/submit_post', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value }
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    form.reset();
+                    showPosts();
+                } else {
+                    alert('Error: ' + (data.message || 'Submission failed'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = originalText;
+            }
+        });
+
+        // Comment Submission
+        if (commentForm) {
+            commentForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const submitBtn = commentForm.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerText;
+                const postId = detailPostIdInput.value;
+
+                submitBtn.disabled = true;
+                submitBtn.innerText = '...';
+
+                const formData = new FormData(commentForm);
+
+                try {
+                    const response = await fetch('/submit_comment', {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value }
+                    });
+
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        commentForm.reset();
+                        detailPostIdInput.value = postId; // Restore post id as reset clears it
+                        detailParentIdInput.value = '';
+                        replyingToNotice.classList.add('hidden');
+                        fetchComments(postId); // Refresh comments
+                    } else {
+                        alert('Error: ' + (data.message || 'Comment failed'));
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert('Error posting comment');
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = originalText;
+                }
+            });
+        }
+    });
+</script>
 @stop

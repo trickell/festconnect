@@ -1,0 +1,589 @@
+@extends('layouts.master')
+
+@section('title', 'Fest Connection || Festival Share Zone')
+
+@section('content')
+<div class="relative min-h-screen flex flex-col pt-20 overflow-hidden bg-black text-white">
+    <!-- Video Background -->
+    <x-video-background source="img/video/missedconn_bg.mp4" />
+
+    <!-- Sidebar / Form Container -->
+    <div id="share_form_sidebar"
+        class="fixed top-0 right-0 h-full w-full md:w-96 bg-gray-900/95 backdrop-blur-xl border-l border-white/10 z-50 transform translate-x-full transition-transform duration-500 ease-in-out shadow-2xl">
+        <div class="p-8 h-full flex flex-col">
+            <div class="flex justify-between items-center mb-10">
+                <h2
+                    class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-400 to-purple-400">
+                    Post to Share Zone</h2>
+                <button id="close_sidebar" class="p-2 hover:bg-white/10 rounded-full transition">
+                    <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <form id="share_zone_form" class="flex-grow space-y-6 overflow-y-auto pr-2 custom-scrollbar">
+                @csrf
+                <input type="hidden" name="post_type" value="share_zone">
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-2 uppercase tracking-wider">Post
+                        Type</label>
+                    <select name="category" required
+                        class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-pink-500 transition text-white">
+                        <option value="Chat" class="bg-gray-900" selected>Chat</option>
+                        <option value="Lost Item" class="bg-gray-900">Lost Item</option>
+                        <option value="Find" class="bg-gray-900">Find</option>
+                        <option value="Trinkets" class="bg-gray-900">Trinkets</option>
+                        <option value="Other" class="bg-gray-900">Other</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label
+                        class="block text-sm font-medium text-gray-400 mb-2 uppercase tracking-wider">Festival</label>
+                    <select name="festival" required
+                        class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-pink-500 transition text-white">
+                        <option value="">Select a Festival</option>
+                        <optgroup label="EDM">
+                            <option value="lostLands">Lost Lands</option>
+                            <option value="electricforest">Electric Forest</option>
+                            <option value="solfest">Sol Fest</option>
+                            <option value="edc">Electric Daisy Carnival</option>
+                            <option value="umf">Ultra Music Festival</option>
+                        </optgroup>
+                        <optgroup label="Rock">
+                            <option value="louderthanlife">Louder Than Life</option>
+                            <option value="aftershock">Aftershock</option>
+                            <option value="bourbonandbeyond">Bourbon And Beyond</option>
+                        </optgroup>
+                        <option value="lollapalooza">Lollapalooza</option>
+                        <option value="Bonnaroo">Bonnaroo</option>
+                        <option value="coachella">Coachella</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-2 uppercase tracking-wider">Image
+                        Reference</label>
+                    <div class="relative group">
+                        <input type="file" name="optConnectImg[]" id="share_img_input" accept="image/*" multiple
+                            class="hidden">
+                        <label for="share_img_input"
+                            class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-white/10 rounded-xl cursor-pointer hover:border-pink-500/50 hover:bg-white/5 transition">
+                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                <svg class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                    </path>
+                                </svg>
+                                <p class="text-xs text-gray-400 text-center px-4" id="image_label">Click to upload
+                                    images (up to 5)</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-2 uppercase tracking-wider">Body</label>
+                    <textarea name="post" required rows="5"
+                        class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-pink-500 transition text-white placeholder-gray-600 resize-none"
+                        placeholder="Tell the community more..."></textarea>
+                </div>
+
+                <button type="submit" id="submit_share_btn"
+                    class="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold py-4 rounded-xl shadow-lg transform hover:scale-[1.02] transition active:scale-95">
+                    POST NOW
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="relative z-10 w-full max-w-6xl mx-auto px-6 flex flex-col h-full">
+        <a href="{{ url('reconnections') }}"
+            class="relative w-1/2 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-sm font-bold shadow-lg mb-10">
+            Visit Missed Connections
+        </a>
+        <!-- Header & Typing Indicator -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+            <div>
+                <h1 class="text-4xl md:text-5xl font-black text-white italic tracking-tighter">FESTIVAL <span
+                        class="text-pink-500">SHARE ZONE</span></h1>
+                <div id="typing_area" class="h-6 mt-2">
+                    <p id="typing_text" class="text-pink-400 text-sm font-medium animate-pulse hidden">Someone is
+                        typing...</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <select id="festival_filter"
+                        class="bg-white/10 text-white text-sm font-bold uppercase tracking-widest px-4 py-3 rounded-full border border-white/10 focus:outline-none hover:bg-white/20 transition cursor-pointer appearance-none pr-10">
+                        <option value="">Select a Festival</option>
+                        <optgroup label="EDM">
+                            <option value="lostLands">Lost Lands</option>
+                            <option value="electricforest">Electric Forest</option>
+                            <option value="solfest">Sol Fest</option>
+                            <option value="edc">Electric Daisy Carnival</option>
+                            <option value="umf">Ultra Music Festival</option>
+                        </optgroup>
+                        <optgroup label="Rock">
+                            <option value="louderthanlife">Louder Than Life</option>
+                            <option value="aftershock">Aftershock</option>
+                            <option value="bourbonandbeyond">Bourbon And Beyond</option>
+                        </optgroup>
+                        <option value="lollapalooza">Lollapalooza</option>
+                        <option value="Bonnaroo">Bonnaroo</option>
+                        <option value="coachella">Coachella</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
+                            </path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <button id="open_sidebar"
+                class="group flex items-center space-x-3 bg-white/10 hover:bg-white/20 px-6 py-3 rounded-full border border-white/10 transition">
+                <span class="text-sm font-bold uppercase tracking-widest text-gray-300 group-hover:text-white">Create
+                    Post</span>
+                <div
+                    class="w-10 h-10 bg-pink-600 rounded-full flex items-center justify-center shadow-lg group-hover:rotate-90 transition duration-300">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                        </path>
+                    </svg>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <!-- Posts Feed -->
+    <div id="share_zone_feed" class="flex-1 flex flex-col gap-6 pb-10 overflow-y-auto custom-scrollbar">
+        <!-- Posts injected via JS -->
+        <div class="py-20 text-center animate-pulse">
+            <p class="text-gray-500">Waking up the share zone...</p>
+        </div>
+    </div>
+
+    <!-- Pagination Controls -->
+    <div id="pagination_container" class="flex justify-center gap-4 pb-10 z-20">
+        <!-- Pagination buttons injected via JS -->
+    </div>
+</div>
+
+<!-- Lightbox Modal -->
+<div id="image_lightbox"
+    class="fixed inset-0 z-[9999] hidden flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-in cursor-pointer">
+    <button id="close_lightbox"
+        class="absolute top-6 right-6 p-4 bg-white/10 hover:bg-white/20 rounded-full transition-all z-[110] group">
+        <svg class="w-10 h-10 text-white group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+    </button>
+    <div
+        class="lightbox-content-container relative w-[85vw] h-[85vh] flex items-center justify-center pointer-events-none">
+        <img id="lightbox_img" src=""
+            class="max-w-full max-h-full object-contain rounded-xl shadow-2xl pointer-events-auto border border-white/5">
+    </div>
+</div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const sidebar = document.getElementById('share_form_sidebar');
+        const openBtn = document.getElementById('open_sidebar');
+        const closeBtn = document.getElementById('close_sidebar');
+        const form = document.getElementById('share_zone_form');
+        const feed = document.getElementById('share_zone_feed');
+        const typingArea = document.getElementById('typing_area');
+        const typingText = document.getElementById('typing_text');
+        const imgInput = document.getElementById('share_img_input');
+        const imgLabel = document.getElementById('image_label');
+
+        const festivalFilter = document.getElementById('festival_filter');
+        const paginationContainer = document.getElementById('pagination_container');
+
+        const currentUserId = {{ optional(session('user'))->id ?? 'null' }};
+        let isTyping = false;
+        let typingTimeout;
+        let lastFetchedDataHash = null;
+        let currentPage = 1;
+        let currentFestival = 'all';
+
+        // Sidebar Toggle
+        openBtn.addEventListener('click', () => sidebar.classList.remove('translate-x-full'));
+        closeBtn.addEventListener('click', () => sidebar.classList.add('translate-x-full'));
+
+        // Filter Update
+        festivalFilter.addEventListener('change', (e) => {
+            currentFestival = e.target.value;
+            currentPage = 1;
+            fetchPosts();
+        });
+
+        // Image Label Update
+        imgInput.addEventListener('change', () => {
+            if (imgInput.files && imgInput.files.length > 0) {
+                const count = imgInput.files.length;
+                imgLabel.innerText = count > 5 ? "Limit 5 images selected" : `${count} images selected`;
+                imgLabel.classList.toggle('text-pink-400', count <= 5);
+                imgLabel.classList.toggle('text-red-400', count > 5);
+            } else {
+                imgLabel.innerText = "Click to upload images (up to 5)";
+                imgLabel.classList.remove('text-pink-400', 'text-red-400');
+            }
+        });
+
+        // Hover Image Logic
+        const thumbnailItems = document.querySelectorAll('.thumbnail-item');
+        thumbnailItems.forEach(item => {
+            item.addEventListener('mouseenter', () => {
+                item.classList.add('hover:border-pink-500/50');
+            });
+            item.addEventListener('mouseleave', () => {
+                item.classList.remove('hover:border-pink-500/50');
+            });
+        });
+
+        // Lightbox Logic
+        const lightbox = document.getElementById('image_lightbox');
+        const lightboxImg = document.getElementById('lightbox_img');
+        const closeLightbox = document.getElementById('close_lightbox');
+
+        window.openImage = (src) => {
+            lightboxImg.src = src;
+            lightbox.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        };
+
+        closeLightbox.addEventListener('click', () => {
+            lightbox.classList.add('hidden');
+            document.body.style.overflow = '';
+        });
+
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) {
+                lightbox.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+        });
+
+        // Typing Status Logic
+        const textarea = form.querySelector('textarea');
+        textarea.addEventListener('input', () => {
+            if (!isTyping) {
+                isTyping = true;
+                updateTypingBackend(true);
+            }
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                isTyping = false;
+                updateTypingBackend(false);
+            }, 3000);
+        });
+
+        const updateTypingBackend = async (typing) => {
+            if (!typing) return; // Backend only tracks active typing time
+            try {
+                await fetch('/update_typing', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ room: 'share_zone' })
+                });
+            } catch (e) { console.error("Typing error:", e); }
+        };
+
+        // Live Updates
+        const fetchPosts = async () => {
+            try {
+                const res = await fetch(`/get_posts?type=share_zone&festival=${currentFestival}&page=${currentPage}`);
+                const data = await res.json();
+                renderPosts(data.data);
+                renderPagination(data);
+            } catch (e) {
+                console.error("Fetch error:", e);
+            }
+        };
+
+        const fetchTypingStatus = async () => {
+            try {
+                const res = await fetch('/get_typing_status?room=share_zone');
+                const users = await res.json();
+                if (users.length > 0) {
+                    const names = users.map(u => u.name).join(', ');
+                    typingText.innerText = `${names} ${users.length > 1 ? 'are' : 'is'} typing...`;
+                    typingText.classList.remove('hidden');
+                } else {
+                    typingText.classList.add('hidden');
+                }
+            } catch (e) { console.error("Typing status error:", e); }
+        };
+
+        const renderPosts = (posts) => {
+            if (posts.length === 0) {
+                feed.innerHTML = '<div class="col-span-full py-20 text-center opacity-50"><p>No shared moments yet. Be the first to post!</p></div>';
+                lastFetchedDataHash = null;
+                return;
+            }
+
+            const dataHash = JSON.stringify(posts.map(p => ({
+                id: p.id,
+                cat: p.category,
+                img_count: p.images ? p.images.length : 0
+            })));
+            if (dataHash === lastFetchedDataHash) return;
+            lastFetchedDataHash = dataHash;
+
+            feed.innerHTML = '';
+            posts.forEach(post => {
+                const card = document.createElement('div');
+                card.className = 'chat-bubble-container flex gap-4 w-full items-start animate-fade-in-up mb-6';
+
+                // Get images array or fallback to mc_image
+                const images = post.images || (post.mc_image ? [post.mc_image] : []);
+
+                let imagesHtml = '';
+                if (images.length > 0) {
+                    imagesHtml = `<div class="flex flex-wrap gap-3 mt-4">`;
+                    images.forEach(img => {
+                        const imgSrc = img.startsWith('http') ? img : `/${img}`;
+                        imagesHtml += `
+                            <div class="thumbnail-item group relative">
+                                <div class="w-20px h-20px  
+                                overflow-hidden rounded-xl 
+                                border border-white/10 cursor-pointer 
+                                hover:border-pink-500/50 transition duration-300">
+                                    <img src="${imgSrc}" onclick="openImage('${imgSrc}')" 
+                                         class="w-full h-full object-cover">
+                                </div>                               
+                            </div>
+                        `;
+                    });
+                    imagesHtml += `</div>`;
+                }
+
+                const isOwnPost = post.user_id === currentUserId;
+
+                card.innerHTML = `
+                    <div class="flex flex-col items-center justify-between self-stretch flex-shrink-0 pb-2">
+                        <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-sm font-bold shadow-lg">
+                            ${post.user ? post.user.name.charAt(0) : '?'}
+                        </div>
+                        ${isOwnPost ? `
+                            <button onclick="deletePost(${post.id})" class="text-gray-500 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-red-500/10" title="Delete Post">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        ` : ''}
+                    </div>
+                    <div class="flex-grow bg-white/5 border border-white/10 rounded-2xl p-6 relative bubble-tail shadow-lg">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-pink-500 text-xs font-black uppercase tracking-widest italic">${post.category || 'Chat'}</span>
+                            <span class="bg-white/5 px-2 py-1 rounded text-[10px] text-gray-500 uppercase font-bold tracking-widest">${post.festival}</span>
+                        </div>
+                        <p class="text-gray-200 text-sm md:text-base leading-relaxed break-words">${post.post}</p>
+                        ${imagesHtml}
+                        <div class="flex items-center justify-between pt-4 mt-4 border-t border-white/5">
+                            <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">${post.user ? post.user.name : 'Unknown'}</span>
+                            <span class="text-[10px] text-gray-600 font-mono italic">${new Date(post.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                    </div>
+                `;
+                feed.appendChild(card);
+            });
+        };
+
+        const renderPagination = (data) => {
+            if (!data.data || data.total === 0) {
+                paginationContainer.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+
+            // Previous Button
+            if (data.current_page > 1) {
+                html += `<button onclick="changePage(${data.current_page - 1})" class="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition text-sm font-bold">PREV</button>`;
+            }
+
+            // Current Page Indicator (Always show if posts exist)
+            html += `<span class="px-4 py-2 bg-pink-600/20 text-pink-400 border border-pink-500/30 rounded-lg text-sm font-bold">PAGE ${data.current_page} OF ${data.last_page}</span>`;
+
+            // Next Button
+            if (data.current_page < data.last_page) {
+                html += `<button onclick="changePage(${data.current_page + 1})" class="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition text-sm font-bold">NEXT</button>`;
+            }
+
+            paginationContainer.innerHTML = html;
+        };
+
+        window.changePage = (page) => {
+            currentPage = page;
+            fetchPosts();
+            feed.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.deletePost = async (id) => {
+            if (!confirm('Are you sure you want to delete this post? This cannot be undone.')) return;
+
+            try {
+                const res = await fetch(`/delete_post/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    fetchPosts();
+                } else {
+                    alert(data.message || 'Failed to delete post.');
+                }
+            } catch (e) {
+                console.error("Delete error:", e);
+                alert('An error occurred while deleting the post.');
+            }
+        };
+
+        // Form Submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submit_share_btn');
+            btn.disabled = true;
+            btn.innerText = "POSTING...";
+
+            const formData = new FormData(form);
+            // If missed_conn is required but we replaces it with category, either pass category as missed_conn or update backend
+            // For now, let's pass category as missed_conn too just in case backend expects it for old logic or validation
+            formData.append('missed_conn', formData.get('category'));
+
+            try {
+                const res = await fetch('/submit_post', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    form.reset();
+                    imgLabel.innerText = "Click to upload images (up to 5)";
+                    imgLabel.classList.remove('text-pink-400', 'text-red-400');
+                    sidebar.classList.add('translate-x-full');
+                    currentPage = 1; // Reset to page 1 to see new post
+                    fetchPosts(); // Immediate refresh
+                } else {
+                    alert(data.message);
+                }
+            } catch (e) {
+                alert("Error posting your moment.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "POST NOW";
+            }
+        });
+
+        // Start Polling
+        fetchPosts();
+        setInterval(() => {
+            if (currentPage === 1) fetchPosts(); // Only auto-poll on page 1
+        }, 5000);
+        setInterval(fetchTypingStatus, 2000);
+    });
+</script>
+
+<style>
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(236, 72, 153, 0.5);
+    }
+
+    .bubble-tail::before {
+        content: '';
+        position: absolute;
+        left: -10px;
+        top: 20px;
+        width: 0;
+        height: 0;
+        border-top: 10px solid transparent;
+        border-bottom: 10px solid transparent;
+        border-right: 10px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .chat-bubble-container:hover .bubble-tail::before {
+        border-right-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .thumbnail-preview {
+        pointer-events: none;
+    }
+
+    /* Full width adjustment */
+    #share_zone_feed {
+        width: 100%;
+    }
+
+    .bubble-tail {
+        max-width: calc(100% - 60px);
+    }
+
+    #image_lightbox {
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #image_lightbox:not(.hidden) {
+        display: flex;
+    }
+
+    .lightbox-content-container {
+        pointer-events: none;
+    }
+
+    .thumbnail-item img {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    @keyframes fade-in-up {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-fade-in-up {
+        animation: fade-in-up 0.6s ease-out forwards;
+    }
+</style>
+@stop

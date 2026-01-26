@@ -1,0 +1,15 @@
+select {
+    option {
+        color: #fff;
+        background-color: #000000;
+    }
+
+    optgroup {
+        color: #fff;
+        background-color: #000000;
+    }
+}
+
+.thumbnail-item {
+    width: 80px;
+}
