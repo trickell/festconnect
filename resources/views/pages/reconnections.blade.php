@@ -116,24 +116,7 @@
                             placeholder="Where in the festival? What happened?" required></textarea>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="space-y-2">
-                            <label for="your_name"
-                                class="block text-purple-300 font-semibold text-sm uppercase tracking-wide">Your
-                                Name</label>
-                            <input type="text" id="your_name" name="name"
-                                class="w-full px-4 py-3 rounded-lg bg-black/40 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition"
-                                placeholder="Real Name or Festival Alias" required>
-                        </div>
-                        <div class="space-y-2">
-                            <label for="your_email"
-                                class="block text-purple-300 font-semibold text-sm uppercase tracking-wide">Your
-                                Email</label>
-                            <input type="email" id="your_email" name="email"
-                                class="w-full px-4 py-3 rounded-lg bg-black/40 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition"
-                                placeholder="We notify you here!" required>
-                        </div>
-                    </div>
+
 
                     <div class="flex flex-col space-y-4 pt-4">
                         <p class="text-xs text-gray-500 text-center italic">After submitting, you will be able to see
@@ -189,16 +172,39 @@
 
         <!-- Post Detail View (Hidden Default) -->
         <div id="rec_post_detail" class="hidden w-full max-w-4xl animate-fade-in">
-            <!-- Back Button -->
-            <button id="close_detail_btn"
-                class="mb-6 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg flex items-center transition space-x-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                <span>Back to Posts</span>
-            </button>
+            <!-- Header Controls -->
+            <div class="flex justify-between items-center mb-6">
+                <button id="close_detail_btn"
+                    class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg flex items-center transition space-x-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    <span>Back to Posts</span>
+                </button>
+
+                <div id="detail_auth_controls" class="hidden flex gap-3">
+                    <!-- Edit Button -->
+                    <button id="edit_post_btn"
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center transition space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        <span>Edit</span>
+                    </button>
+                    <!-- Delete Button -->
+                    <button id="delete_post_btn"
+                        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center transition space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        <span>Delete</span>
+                    </button>
+                </div>
+            </div>
 
             <!-- Post Content -->
             <div id="detail_content"
@@ -266,7 +272,24 @@
         const replyingToNotice = document.getElementById('replying_to_notice');
         const cancelReplyBtn = document.getElementById('cancel_reply');
 
+        const parseTags = (text) => {
+            if (!text) return '';
+            return text.replace(/@(\w+)/g, '<a href="/profile/$1" class="text-purple-400 font-bold hover:underline">@$1</a>');
+        };
+
+        const currentUserId = {{ optional(session('user'))->id ?? 'null' }};
+        let editingPostId = null;
+        let currentDetailPost = null;
         let allPosts = []; // Store fetched posts for filtering
+
+        const updatePresence = async () => {
+            try {
+                await fetch('/update_presence', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                });
+            } catch (e) { }
+        };
 
         // --- View Switching Logic ---
         const hideAllViews = () => {
@@ -276,8 +299,22 @@
             detailDiv.classList.add('hidden');
         };
 
-        const switchToForm = () => {
+        const switchToForm = (editData = null) => {
             hideAllViews();
+            if (editData && editData.id) {
+                editingPostId = editData.id;
+                formDiv.querySelector('h3').innerText = "Edit your connection";
+                formDiv.querySelector('button[type="submit"]').innerText = "Update Post";
+                form.querySelector('select[name="festival"]').value = editData.festival;
+                form.querySelector('textarea[name="missed_conn"]').value = editData.missed_conn;
+                form.querySelector('textarea[name="post"]').value = editData.post;
+                // We no longer manually set name/email here as they are handled by session
+            } else {
+                editingPostId = null;
+                formDiv.querySelector('h3').innerText = "Tell us about them";
+                formDiv.querySelector('button[type="submit"]').innerText = "Submit";
+                form.reset();
+            }
             formDiv.classList.remove('hidden');
         };
 
@@ -339,8 +376,11 @@
                         </div>
                     </div>
                     <div class="p-5">
-                        <h3 class="text-lg font-bold text-white mb-2 line-clamp-1">${post.user ? post.user.name : 'Someone'} is looking...</h3>
-                        <p class="text-gray-300 text-sm line-clamp-3 leading-relaxed mb-4">${post.missed_conn || post.post}</p>
+                        <div class="flex items-center gap-2 mb-2">
+                            <a href="/profile/${post.user ? post.user.name : ''}" class="text-lg font-bold text-white line-clamp-1 hover:text-purple-300 transition">${post.user ? post.user.name : 'Someone'} is looking...</a>
+                            <div class="w-2.5 h-2.5 rounded-full ${post.user && post.user.last_seen_at && (new Date() - new Date(post.user.last_seen_at) < 60000) ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-500'}"></div>
+                        </div>
+                        <p class="text-gray-300 text-sm line-clamp-3 leading-relaxed mb-4">${parseTags(post.missed_conn || post.post)}</p>
                         
                         <div class="pt-4 border-t border-white/10 flex justify-between items-center text-xs text-gray-400">
                             <span>${new Date(post.created_at).toLocaleDateString()}</span>
@@ -357,8 +397,15 @@
 
         // --- Detail View Logic ---
         const openPostDetail = async (post) => {
+            currentDetailPost = post;
             // Render Post Content
             const imageUrl = post.mc_image ? `/${post.mc_image}` : 'https://images.unsplash.com/photo-1493225255756-d9584f8606e9?auto=format&fit=crop&q=80&w=2070';
+
+            // Show auth controls if it's the user's post
+            const authControls = document.getElementById('detail_auth_controls');
+            if (authControls) {
+                authControls.classList.toggle('hidden', post.user_id !== currentUserId);
+            }
 
             detailContent.innerHTML = `
                 <div class="flex flex-col md:flex-row gap-6 md:gap-8">
@@ -369,12 +416,12 @@
                         <div class="inline-block self-start bg-purple-600 px-3 py-1 rounded-full text-xs font-bold text-white uppercase tracking-wider mb-4">
                             ${post.festival}
                         </div>
-                        <h2 class="text-3xl font-bold text-white mb-4">Looking for: <span class="text-purple-300">${post.missed_conn}</span></h2>
+                        <h2 class="text-3xl font-bold text-white mb-4">Looking for: <span class="text-purple-300">${parseTags(post.missed_conn)}</span></h2>
                         <div class="prose prose-invert">
-                            <p class="text-gray-300 text-lg leading-relaxed mb-6">${post.post}</p>
+                            <p class="text-gray-300 text-lg leading-relaxed mb-6">${parseTags(post.post)}</p>
                         </div>
                         <div class="mt-auto pt-4 border-t border-white/10 text-sm text-gray-400">
-                            Posted by <span class="text-white font-semibold">${post.user ? post.user.name : 'Unknown'}</span> on ${new Date(post.created_at).toLocaleDateString()}
+                            Posted by <a href="/profile/${post.user ? post.user.name : ''}" class="text-white font-semibold hover:text-purple-300 transition">${post.user ? post.user.name : 'Unknown'}</a> on ${new Date(post.created_at).toLocaleDateString()}
                         </div>
                     </div>
                 </div>
@@ -440,10 +487,10 @@
 
                 node.innerHTML = `
                     <div class="flex justify-between items-start mb-2">
-                         <span class="font-bold text-purple-300 text-sm">${c.user_name || 'User'}</span>
+                         <a href="/profile/${c.user_name || ''}" class="font-bold text-purple-300 text-sm hover:text-white transition">${c.user_name || 'User'}</a>
                          <span class="text-xs text-gray-500">${timeStr}</span>
                     </div>
-                    <p class="text-gray-200 text-sm mb-3">${c.comment}</p>
+                    <p class="text-gray-200 text-sm mb-3">${parseTags(c.comment)}</p>
                     ${commentForm ? `<button class="text-xs text-gray-400 hover:text-white flex items-center gap-1 transition reply-btn" data-id="${c.id}" data-user="${c.user_name}">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg> Reply
                     </button>` : ''}
@@ -486,7 +533,7 @@
         };
 
         document.querySelectorAll('.submitMissedConnections').forEach(btn => {
-            btn.addEventListener('click', switchToForm);
+            btn.addEventListener('click', () => switchToForm());
         });
 
         document.querySelectorAll('.viewMissedConnections').forEach(btn => {
@@ -496,6 +543,44 @@
         if (closeDetailBtn) {
             closeDetailBtn.addEventListener('click', switchToPosts);
         }
+
+        // Edit and Delete Detail Actions
+        document.getElementById('edit_post_btn')?.addEventListener('click', () => {
+            if (currentDetailPost) switchToForm(currentDetailPost);
+        });
+
+        document.getElementById('delete_post_btn')?.addEventListener('click', async () => {
+            if (!currentDetailPost) return;
+
+            const commentCount = currentDetailPost.comments_count || 0;
+            if (commentCount > 0) {
+                if (!confirm('Warning: This post has comments. Deleting it will remove all discussion and notify everyone who commented. Are you sure?')) return;
+            }
+            if (!confirm('Are you sure you want to delete this post? This cannot be undone.')) return;
+
+            try {
+                const res = await fetch(`/delete_post/${currentDetailPost.id}`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    // Success symbol flash
+                    const toast = document.createElement('div');
+                    toast.className = 'fixed top-10 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-full flex items-center gap-2 shadow-2xl z-[9999] animate-bounce';
+                    toast.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg> Post Removed Successfully`;
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 3000);
+
+                    showPosts();
+                } else {
+                    alert(data.message || 'Deletion failed');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('An error occurred');
+            }
+        });
 
         // Cancel Reply
         if (cancelReplyBtn) {
@@ -526,9 +611,10 @@
             submitBtn.innerText = 'Submitting...';
 
             const formData = new FormData(form);
+            const url = editingPostId ? `/update_post/${editingPostId}` : '/submit_post';
 
             try {
-                const response = await fetch('/submit_post', {
+                const response = await fetch(url, {
                     method: 'POST',
                     body: formData,
                     headers: { 'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value }
@@ -590,6 +676,10 @@
                 }
             });
         }
+
+        // Presence Polling
+        updatePresence();
+        setInterval(updatePresence, 20000);
     });
 </script>
 @stop

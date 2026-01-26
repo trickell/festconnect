@@ -46,6 +46,7 @@ Route::get('/logout', $C_NAMESPACE . 'UserController@logout');
 
 Route::post('/login', $C_NAMESPACE . 'UserController@login');
 Route::post('/register', $C_NAMESPACE . 'UserController@create');
+Route::post('/update_presence', $C_NAMESPACE . 'UserController@update_presence');
 
 // Routes for retrieving and submitting posts and comments
 Route::get('/get_posts', $C_NAMESPACE . 'PostsController@get_posts');
@@ -65,7 +66,14 @@ Route::get('/share_zone', function (Request $request) {
 });
 Route::post('/update_typing', $C_NAMESPACE . 'PostsController@update_typing');
 Route::post('/delete_post/{id}', $C_NAMESPACE . 'PostsController@delete_post');
+Route::post('/update_post/{id}', $C_NAMESPACE . 'PostsController@update_post');
+Route::get('/get_notifications', $C_NAMESPACE . 'PostsController@get_notifications');
+Route::post('/mark_notifications_read', $C_NAMESPACE . 'PostsController@mark_notifications_read');
 Route::get('/get_typing_status', $C_NAMESPACE . 'PostsController@get_typing_status');
+
+// Profile Routes
+Route::get('/profile/{name}', $C_NAMESPACE . 'ProfileController@show');
+Route::post('/profile/update', $C_NAMESPACE . 'ProfileController@update');
 
 // Route::get('/create_comment', function(){
 //     try {

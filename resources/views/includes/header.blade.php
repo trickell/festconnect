@@ -2,8 +2,8 @@
     class="w-full z-50 bg-violet-950/80 backdrop-blur-md border-b border-white/10 sticky top-0 transition-all duration-300">
     <nav class="w-full px-4 md:px-8 py-3 flex justify-between items-center">
         <!-- Logo -->
-        <a href="{{ url('/') }}"
-            class="text-xl md:text-2xl font-bold text-white tracking-wider hover:text-purple-300 transition shrink-0 mr-4">
+        <a href="{{ url('/') }}" class="flex text-2xl md:text-3xl font-bold text-white tracking-wider 
+            hover:text-purple-300 transition ">
             Fest<span class="text-purple-400">Connect</span>
         </a>
 
@@ -94,8 +94,26 @@
                     class="max-w-0 overflow-hidden whitespace-nowrap group-active:max-w-xs group-hover:max-w-xs group-hover:ml-2 transition-all duration-300 text-sm font-medium">Contact</span>
             </a>
 
+            <!-- Notifications (Mobile) -->
+            <!-- @if(session('user'))
+                <button id="mobile_notif_bell" class="p-2 text-gray-400 hover:text-white transition relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    <span id="mobile_notif_badge"
+                        class="absolute top-1 right-1 bg-red-600 text-[10px] font-bold text-white px-1.5 py-0.5 rounded-full hidden">0</span>
+                </button>
+            @endif -->
+
             <!-- User/Login -->
             @if(session('user'))
+                <a href="{{ url('/profile/' . (optional(session('user'))->name ?? '')) }}"
+                    class="group flex items-center p-2 rounded-full transition-all duration-300 ease-in-out text-gray-400 hover:bg-white/10 hover:text-white">
+                    <img src="{{ optional(session('user'))->profile_image ? asset(optional(session('user'))->profile_image) : 'https://ui-avatars.com/api/?name=' . urlencode(optional(session('user'))->name ?? '') . '&background=6366f1&color=fff&size=64' }}"
+                        class="w-6 h-6 rounded-full object-cover">
+                </a>
                 <a href="{{ url('/logout') }}"
                     class="group flex items-center p-2 rounded-full transition-all duration-300 ease-in-out text-red-400 hover:bg-red-500/20">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
@@ -116,12 +134,49 @@
             @endif
         </div>
 
-        <!-- Auth Buttons (Desktop) -->
+        <!-- Notifications (Desktop) -->
+        @if(session('user'))
+            <div class="relative group" id="notification_dropdown_wrapper">
+                <button id="notification_bell" class="p-2 text-gray-300 hover:text-white transition relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    <span id="notif_badge"
+                        class="absolute top-1 right-1 bg-red-600 text-[10px] font-bold text-white px-1.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(220,38,38,0.5)] hidden">0</span>
+                </button>
+                <!-- Dropdown -->
+                <div id="notif_dropdown"
+                    class="absolute right-0 top-full mt-2 w-72 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl py-2 hidden z-[60]">
+                    <div class="px-4 py-2 border-b border-white/5 flex justify-between items-center">
+                        <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Notifications</span>
+                        <button onclick="markAllRead()"
+                            class="text-[10px] text-purple-400 hover:text-purple-300 font-bold uppercase tracking-widest">Mark
+                            All Read</button>
+                    </div>
+                    <div id="notif_list" class="max-h-80 overflow-y-auto custom-scrollbar">
+                        <p class="text-center py-4 text-xs text-gray-500">No new notifications</p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        <!-- User/Login (Desktop) -->
         <div class="hidden md:flex items-center space-x-4">
             @if(session('user'))
-                <span class="text-gray-300 text-sm">Hi, {{ session('user')->name ?? 'User' }}</span>
+                <a href="{{ url('/profile/' . (optional(session('user'))->name ?? '')) }}"
+                    class="flex items-center space-x-3 group">
+                    <span class="text-gray-300 text-sm group-hover:text-white transition">Hi,
+                        {{ optional(session('user'))->name ?? 'User' }}</span>
+                    <div
+                        class="w-8 h-8 rounded-full overflow-hidden border border-white/10 group-hover:border-purple-500 transition">
+                        <img src="{{ optional(session('user'))->profile_image ? asset(optional(session('user'))->profile_image) : 'https://ui-avatars.com/api/?name=' . urlencode(optional(session('user'))->name ?? '') . '&background=6366f1&color=fff&size=64' }}"
+                            class="w-full h-full object-cover">
+                    </div>
+                </a>
                 <a href="{{ url('/logout') }}"
-                    class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-full text-sm font-semibold transition">Logout</a>
+                    class="px-4 py-2 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-600/30 rounded-full text-sm font-semibold transition">Logout</a>
             @else
                 <a href="{{ url('/login') }}"
                     class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-full text-sm font-semibold transition">Login</a>
@@ -129,3 +184,87 @@
         </div>
     </nav>
 </header>
+
+@if(session('user'))
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const bell = document.getElementById('notification_bell');
+            const dropdown = document.getElementById('notif_dropdown');
+            const badge = document.getElementById('notif_badge');
+            const mobileBadge = document.getElementById('mobile_notif_badge');
+            const list = document.getElementById('notif_list');
+
+            let isDropdownOpen = false;
+
+            const fetchNotifications = async () => {
+                try {
+                    const res = await fetch('/get_notifications');
+                    const data = await res.json();
+                    updateUI(data);
+                } catch (e) { console.error("Notif error:", e); }
+            };
+
+            const updateUI = (notifications) => {
+                const count = notifications.length;
+                if (count > 0) {
+                    badge.innerText = count;
+                    badge.classList.remove('hidden');
+                    mobileBadge.innerText = count;
+                    mobileBadge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                    mobileBadge.classList.add('hidden');
+                }
+
+                if (notifications.length === 0) {
+                    list.innerHTML = '<p class="text-center py-4 text-xs text-gray-500">No new notifications</p>';
+                    return;
+                }
+
+                list.innerHTML = notifications.map(n => `
+                                                                            <div class="px-4 py-3 hover:bg-white/5 border-b border-white/5 transition cursor-pointer" onclick="handleNotifClick(${JSON.stringify(n.data).replace(/"/g, '&quot;')})">
+                                                                                <p class="text-xs text-gray-200">
+                                                                                    <span class="font-bold text-purple-400">${n.data.tagged_by || n.data.reply_by || n.data.comment_by || 'Someone'}</span> 
+                                                                                    ${n.data.message}
+                                                                                </p>
+                                                                                <span class="text-[10px] text-gray-500 italic">${new Date(n.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                                                                            </div>
+                                                                        `).join('');
+            };
+
+            window.handleNotifClick = (data) => {
+                // Redirect to post
+                if (data.post_id) {
+                    window.location.href = `/share_zone?post=${data.post_id}`;
+                }
+            };
+
+            window.markAllRead = async () => {
+                try {
+                    await fetch('/mark_notifications_read', {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                    });
+                    fetchNotifications();
+                } catch (e) { console.error(e); }
+            };
+
+            bell.addEventListener('click', (e) => {
+                e.stopPropagation();
+                isDropdownOpen = !isDropdownOpen;
+                dropdown.classList.toggle('hidden', !isDropdownOpen);
+            });
+
+            document.addEventListener('click', () => {
+                isDropdownOpen = false;
+                dropdown.classList.add('hidden');
+            });
+
+            dropdown.addEventListener('click', (e) => e.stopPropagation());
+
+            // Polling
+            fetchNotifications();
+            setInterval(fetchNotifications, 10000);
+        });
+    </script>
+@endif

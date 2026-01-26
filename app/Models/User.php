@@ -20,7 +20,12 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
-        'password'
+        'password',
+        'profile_image',
+        'about_me',
+        'festivals',
+        'genres',
+        'last_seen_at'
     ];
 
 
@@ -43,6 +48,8 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'genres' => 'array',
+        'last_seen_at' => 'datetime',
     ];
 
     public function posts()

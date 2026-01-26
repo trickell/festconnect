@@ -12,7 +12,7 @@
         class="fixed top-0 right-0 h-full w-full md:w-96 bg-gray-900/95 backdrop-blur-xl border-l border-white/10 z-50 transform translate-x-full transition-transform duration-500 ease-in-out shadow-2xl">
         <div class="p-8 h-full flex flex-col">
             <div class="flex justify-between items-center mb-10">
-                <h2
+                <h2 id="form_title"
                     class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-400 to-purple-400">
                     Post to Share Zone</h2>
                 <button id="close_sidebar" class="p-2 hover:bg-white/10 rounded-full transition">
@@ -26,6 +26,7 @@
             <form id="share_zone_form" class="flex-grow space-y-6 overflow-y-auto pr-2 custom-scrollbar">
                 @csrf
                 <input type="hidden" name="post_type" value="share_zone">
+                <input type="hidden" name="reply_to_post_id" id="reply_to_post_id">
 
                 <div>
                     <label class="block text-sm font-medium text-gray-400 mb-2 uppercase tracking-wider">Post
@@ -33,6 +34,7 @@
                     <select name="category" required
                         class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-pink-500 transition text-white">
                         <option value="Chat" class="bg-gray-900" selected>Chat</option>
+                        <option value="Reply" class="bg-gray-900">Reply</option>
                         <option value="Lost Item" class="bg-gray-900">Lost Item</option>
                         <option value="Find" class="bg-gray-900">Find</option>
                         <option value="Trinkets" class="bg-gray-900">Trinkets</option>
@@ -211,6 +213,7 @@
         const festivalFilter = document.getElementById('festival_filter');
         const paginationContainer = document.getElementById('pagination_container');
 
+        let editingPostId = null;
         const currentUserId = {{ optional(session('user'))->id ?? 'null' }};
         let isTyping = false;
         let typingTimeout;
@@ -219,7 +222,13 @@
         let currentFestival = 'all';
 
         // Sidebar Toggle
-        openBtn.addEventListener('click', () => sidebar.classList.remove('translate-x-full'));
+        openBtn.addEventListener('click', () => {
+            editingPostId = null;
+            document.getElementById('form_title').innerText = "Post to Share Zone";
+            document.getElementById('submit_share_btn').innerText = "POST NOW";
+            form.reset();
+            sidebar.classList.remove('translate-x-full');
+        });
         closeBtn.addEventListener('click', () => sidebar.classList.add('translate-x-full'));
 
         // Filter Update
@@ -290,6 +299,17 @@
             }, 3000);
         });
 
+        const updatePresence = async () => {
+            try {
+                await fetch('/update_presence', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                });
+            } catch (e) {
+                console.error("Presence error:", e);
+            }
+        };
+
         const updateTypingBackend = async (typing) => {
             if (!typing) return; // Backend only tracks active typing time
             try {
@@ -331,7 +351,7 @@
         };
 
         const renderPosts = (posts) => {
-            if (posts.length === 0) {
+            if (!posts || posts.length === 0) {
                 feed.innerHTML = '<div class="col-span-full py-20 text-center opacity-50"><p>No shared moments yet. Be the first to post!</p></div>';
                 lastFetchedDataHash = null;
                 return;
@@ -340,15 +360,37 @@
             const dataHash = JSON.stringify(posts.map(p => ({
                 id: p.id,
                 cat: p.category,
+                body: p.post,
+                updated: p.updated_at,
                 img_count: p.images ? p.images.length : 0
             })));
-            if (dataHash === lastFetchedDataHash) return;
-            lastFetchedDataHash = dataHash;
 
-            feed.innerHTML = '';
+            const isSameContent = dataHash === lastFetchedDataHash;
+
+            if (!isSameContent) {
+                lastFetchedDataHash = dataHash;
+                feed.innerHTML = '';
+            }
+
             posts.forEach(post => {
-                const card = document.createElement('div');
-                card.className = 'chat-bubble-container flex gap-4 w-full items-start animate-fade-in-up mb-6';
+                const isOwnPost = post.user_id === currentUserId;
+                const lastSeen = post.user && post.user.last_seen_at ? new Date(post.user.last_seen_at) : null;
+                const isOnline = lastSeen && (new Date() - lastSeen < 60000);
+                const statusColor = isOnline ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-red-500';
+
+                const existingCard = document.getElementById(`post-${post.id}`);
+
+                if (existingCard) {
+                    const circle = existingCard.querySelector('.status-circle');
+                    if (circle) circle.className = `absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-black status-circle ${statusColor}`;
+                    if (isSameContent) return; // Skip rebuild if same content and card exists
+                }
+
+                const card = existingCard || document.createElement('div');
+                card.id = `post-${post.id}`;
+                if (!existingCard) {
+                    card.className = 'chat-bubble-container flex gap-4 w-full items-start animate-fade-in-up mb-6 transition-all duration-1000';
+                }
 
                 // Get images array or fallback to mc_image
                 const images = post.images || (post.mc_image ? [post.mc_image] : []);
@@ -373,35 +415,57 @@
                     imagesHtml += `</div>`;
                 }
 
-                const isOwnPost = post.user_id === currentUserId;
+                const replyingTo = post.reply_to_post_id ? `<span class="text-[10px] text-pink-400 font-bold mt-1">replying to <a href="#post-${post.reply_to_post_id}" class="hover:underline">post #${post.reply_to_post_id}</a></span>` : '';
 
                 card.innerHTML = `
                     <div class="flex flex-col items-center justify-between self-stretch flex-shrink-0 pb-2">
-                        <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-sm font-bold shadow-lg">
-                            ${post.user ? post.user.name.charAt(0) : '?'}
+                        <div class="relative">
+                            <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-sm font-bold shadow-lg">
+                                ${post.user ? post.user.name.charAt(0) : '?'}
+                            </div>
+                            <div class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-black status-circle ${statusColor}"></div>
                         </div>
-                        ${isOwnPost ? `
-                            <button onclick="deletePost(${post.id})" class="text-gray-500 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-red-500/10" title="Delete Post">
+                        <div class="flex flex-col items-center gap-1">
+                            ${isOwnPost ? `
+                                <button onclick="editPost(${post.id}, '${post.category}', '${post.festival}', \`${post.post.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)" class="text-gray-500 hover:text-blue-500 transition-colors p-2 rounded-full hover:bg-blue-500/10" title="Edit Post">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                </button>
+                            ` : ''}
+                            <button onclick="openReply(${post.id}, '${post.user ? post.user.name : 'Unknown'}', '${post.festival}')" class="text-gray-500 hover:text-pink-500 transition-colors p-2 rounded-full hover:bg-pink-500/10" title="Reply to Post">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                                 </svg>
                             </button>
-                        ` : ''}
+                            ${isOwnPost ? `
+                                <button onclick="deletePost(${post.id}, ${post.comments_count || 0})" class="text-gray-500 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-red-500/10" title="Delete Post">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            ` : ''}
+                        </div>
                     </div>
                     <div class="flex-grow bg-white/5 border border-white/10 rounded-2xl p-6 relative bubble-tail shadow-lg">
                         <div class="flex justify-between items-start mb-2">
-                            <span class="text-pink-500 text-xs font-black uppercase tracking-widest italic">${post.category || 'Chat'}</span>
+                            <div class="flex items-center">
+                                <span class="text-pink-500 text-xs font-black uppercase tracking-widest italic">${post.category || 'Chat'}</span>
+                            </div>
                             <span class="bg-white/5 px-2 py-1 rounded text-[10px] text-gray-500 uppercase font-bold tracking-widest">${post.festival}</span>
                         </div>
-                        <p class="text-gray-200 text-sm md:text-base leading-relaxed break-words">${post.post}</p>
+                        <p class="text-gray-200 text-sm md:text-base leading-relaxed break-words post-body">${parseTags(post.post)}</p>
                         ${imagesHtml}
                         <div class="flex items-center justify-between pt-4 mt-4 border-t border-white/5">
-                            <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">${post.user ? post.user.name : 'Unknown'}</span>
+                            <div class="flex flex-col">
+                                <a href="/profile/${post.user ? post.user.name : ''}" class="text-[11px] font-bold text-gray-400 uppercase tracking-wider hover:text-white transition">${post.user ? post.user.name : 'Unknown'}</a>
+                                ${replyingTo}
+                            </div>
                             <span class="text-[10px] text-gray-600 font-mono italic">${new Date(post.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
                     </div>
                 `;
-                feed.appendChild(card);
+                if (!existingCard) feed.appendChild(card);
             });
         };
 
@@ -435,7 +499,10 @@
             feed.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        window.deletePost = async (id) => {
+        window.deletePost = async (id, commentCount) => {
+            if (commentCount > 0) {
+                if (!confirm('Warning: This post has comments. Deleting it will remove all discussion and notify everyone who commented. Are you sure?')) return;
+            }
             if (!confirm('Are you sure you want to delete this post? This cannot be undone.')) return;
 
             try {
@@ -447,7 +514,21 @@
                 });
                 const data = await res.json();
                 if (data.status === 'success') {
-                    fetchPosts();
+                    // Success visual feedback
+                    const el = document.getElementById(`post-${id}`);
+                    if (el) {
+                        el.classList.add('scale-0', 'opacity-0');
+                        setTimeout(() => fetchPosts(), 500);
+
+                        // Small success overlay
+                        const toast = document.createElement('div');
+                        toast.className = 'fixed top-10 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-full flex items-center gap-2 shadow-2xl z-[9999] animate-bounce';
+                        toast.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg> Post Deleted Successfully`;
+                        document.body.appendChild(toast);
+                        setTimeout(() => toast.remove(), 3000);
+                    } else {
+                        fetchPosts();
+                    }
                 } else {
                     alert(data.message || 'Failed to delete post.');
                 }
@@ -455,6 +536,32 @@
                 console.error("Delete error:", e);
                 alert('An error occurred while deleting the post.');
             }
+        };
+
+        window.editPost = (id, category, festival, body) => {
+            editingPostId = id;
+            document.getElementById('form_title').innerText = "Edit Post";
+            document.getElementById('submit_share_btn').innerText = "UPDATE POST";
+            form.querySelector('select[name="category"]').value = category;
+            form.querySelector('select[name="festival"]').value = festival;
+            form.querySelector('textarea').value = body;
+            sidebar.classList.remove('translate-x-full');
+        };
+
+        window.openReply = (postId, username, festival) => {
+            document.getElementById('reply_to_post_id').value = postId;
+            form.querySelector('select[name="category"]').value = "Reply";
+            if (festival) {
+                form.querySelector('select[name="festival"]').value = festival;
+            }
+            const textarea = form.querySelector('textarea');
+            textarea.value = `@${username} `;
+            sidebar.classList.remove('translate-x-full');
+            textarea.focus();
+        };
+
+        const parseTags = (text) => {
+            return text.replace(/@(\w+)/g, '<a href="/profile/$1" class="text-pink-400 font-bold hover:underline">@$1</a>');
         };
 
         // Form Submission
@@ -465,12 +572,10 @@
             btn.innerText = "POSTING...";
 
             const formData = new FormData(form);
-            // If missed_conn is required but we replaces it with category, either pass category as missed_conn or update backend
-            // For now, let's pass category as missed_conn too just in case backend expects it for old logic or validation
-            formData.append('missed_conn', formData.get('category'));
+            const url = editingPostId ? `/update_post/${editingPostId}` : '/submit_post';
 
             try {
-                const res = await fetch('/submit_post', {
+                const res = await fetch(url, {
                     method: 'POST',
                     body: formData,
                     headers: {
@@ -480,6 +585,10 @@
                 const data = await res.json();
                 if (data.status === 'success') {
                     form.reset();
+                    editingPostId = null;
+                    document.getElementById('form_title').innerText = "Post to Share Zone";
+                    document.getElementById('submit_share_btn').innerText = "POST NOW";
+                    document.getElementById('reply_to_post_id').value = '';
                     imgLabel.innerText = "Click to upload images (up to 5)";
                     imgLabel.classList.remove('text-pink-400', 'text-red-400');
                     sidebar.classList.add('translate-x-full');
@@ -497,11 +606,29 @@
         });
 
         // Start Polling
-        fetchPosts();
+        fetchPosts().then(() => {
+            // Deep Link Check
+            const urlParams = new URLSearchParams(window.location.search);
+            const postId = urlParams.get('post');
+            if (postId) {
+                setTimeout(() => {
+                    const el = document.getElementById(`post-${postId}`);
+                    if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        el.classList.add('ring-2', 'ring-pink-500', 'ring-offset-4', 'ring-offset-black', 'rounded-2xl');
+                        setTimeout(() => el.classList.remove('ring-2', 'ring-pink-500', 'ring-offset-4', 'ring-offset-black'), 3000);
+                    }
+                }, 500);
+            }
+        });
         setInterval(() => {
             if (currentPage === 1) fetchPosts(); // Only auto-poll on page 1
         }, 5000);
         setInterval(fetchTypingStatus, 2000);
+
+        // Presence Polling
+        updatePresence();
+        setInterval(updatePresence, 20000);
     });
 </script>
 

@@ -62,4 +62,16 @@ class UserController extends BaseController
         session()->forget('user');
         return redirect()->back();
     }
+
+    public function update_presence()
+    {
+        if (!session()->has('user')) {
+            return json_encode(['status' => 'error', 'message' => 'Unauthorized']);
+        }
+
+        $userId = optional(session('user'))->id;
+        \App\Models\User::where('id', $userId)->update(['last_seen_at' => now()]);
+
+        return json_encode(['status' => 'success']);
+    }
 }

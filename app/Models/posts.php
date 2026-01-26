@@ -16,7 +16,8 @@ class Posts extends Model
         'mc_image',
         'post_type',
         'category',
-        'images'
+        'images',
+        'reply_to_post_id'
     ];
 
     protected $casts = [
@@ -31,5 +32,15 @@ class Posts extends Model
     public function comments()
     {
         return $this->hasMany(Comments::class, 'post_id', 'id');
+    }
+
+    public function parentPost()
+    {
+        return $this->belongsTo(Posts::class, 'reply_to_post_id', 'id');
+    }
+
+    public function replies()
+    {
+        return $this->hasMany(Posts::class, 'reply_to_post_id', 'id');
     }
 }

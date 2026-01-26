@@ -16,6 +16,7 @@ class PostsController extends BaseController
         $usePagination = $request->has('page') || $type === 'share_zone';
 
         $query = \App\Models\Posts::with('user')
+            ->withCount('comments')
             ->where('post_type', $type);
 
         if ($festival !== 'all') {
@@ -96,6 +97,26 @@ class PostsController extends BaseController
 
         try {
             $post = \App\Models\Posts::create($data);
+
+            // Notification logic
+            $this->notifyTaggedUsers($post->post, $post->id);
+
+            // Notify post owner if this is a reply post
+            if ($post->reply_to_post_id) {
+                $parentPost = \App\Models\Posts::find($post->reply_to_post_id);
+                if ($parentPost && $parentPost->user_id !== $userid) {
+                    \App\Models\Notification::create([
+                        'user_id' => $parentPost->user_id,
+                        'type' => 'reply',
+                        'data' => [
+                            'post_id' => $post->id,
+                            'reply_by' => optional(session('user'))->name,
+                            'message' => "replied to your post"
+                        ]
+                    ]);
+                }
+            }
+
         } catch (\Exception $e) {
             return json_encode(['status' => 'error', 'message' => 'Post submission failed', 'error' => $e->getMessage(), 'post_data' => $data]);
         }
@@ -145,7 +166,7 @@ class PostsController extends BaseController
         }
 
         $userId = $request->session()->get('user')->id;
-        $post = \App\Models\Posts::find($id);
+        $post = \App\Models\Posts::with('comments')->find($id);
 
         if (!$post) {
             return response()->json(['status' => 'error', 'message' => 'Post not found'], 404);
@@ -156,6 +177,21 @@ class PostsController extends BaseController
         }
 
         try {
+            // Get unique users who commented on this post
+            $commenterIds = $post->comments->pluck('user_id')->unique()->filter(fn($id) => $id !== $userId);
+
+            // Create notifications for commenters
+            foreach ($commenterIds as $commenterId) {
+                \App\Models\Notification::create([
+                    'user_id' => $commenterId,
+                    'type' => 'post_removed',
+                    'data' => [
+                        'post_id' => $id,
+                        'message' => "A post you commented on was removed by the author"
+                    ]
+                ]);
+            }
+
             // Delete associated images if they exist
             if ($post->images) {
                 foreach ($post->images as $img) {
@@ -171,6 +207,34 @@ class PostsController extends BaseController
             return response()->json(['status' => 'success', 'message' => 'Post deleted successfully']);
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => 'Deletion failed', 'error' => $e->getMessage()]);
+        }
+    }
+
+    // Handles post update
+    public function update_post($id, Request $request)
+    {
+        if (!$request->session()->has('user')) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 401);
+        }
+
+        $userId = $request->session()->get('user')->id;
+        $post = \App\Models\Posts::find($id);
+
+        if (!$post) {
+            return response()->json(['status' => 'error', 'message' => 'Post not found'], 404);
+        }
+
+        if ($post->user_id !== $userId) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 403);
+        }
+
+        $data = $request->except(['_token', '_method', 'optConnectImg']);
+
+        try {
+            $post->update($data);
+            return response()->json(['status' => 'success', 'message' => 'Post updated successfully', 'post' => $post->load('user')]);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => 'Update failed', 'error' => $e->getMessage()]);
         }
     }
 
@@ -220,10 +284,98 @@ class PostsController extends BaseController
         try {
             $comment = \App\Models\Comments::create($data);
             $user = \App\Models\User::find($userid); // Fetch user to return name
+
+            // Tag notification logic
+            $this->notifyTaggedUsers($comment->comment, $comment->post_id, $comment->id);
+
+            // Notify post owner of comment
+            $post = \App\Models\Posts::find($comment->post_id);
+            if ($post && $post->user_id !== $userid) {
+                \App\Models\Notification::create([
+                    'user_id' => $post->user_id,
+                    'type' => 'comment',
+                    'data' => [
+                        'post_id' => $post->id,
+                        'comment_id' => $comment->id,
+                        'comment_by' => $user->name,
+                        'message' => "commented on your post"
+                    ]
+                ]);
+            }
+
+            // Notify parent comment owner if exists
+            if ($comment->parent) {
+                $parentComment = \App\Models\Comments::find($comment->parent);
+                if ($parentComment && $parentComment->user_id !== $userid) {
+                    \App\Models\Notification::create([
+                        'user_id' => $parentComment->user_id,
+                        'type' => 'comment_reply',
+                        'data' => [
+                            'post_id' => $post->id,
+                            'comment_id' => $comment->id,
+                            'reply_by' => $user->name,
+                            'message' => "replied to your comment"
+                        ]
+                    ]);
+                }
+            }
+
         } catch (\Exception $e) {
             return json_encode(['status' => 'error', 'message' => 'Comment submission failed', 'error' => $e->getMessage(), 'comment_data' => $data]);
         }
         return json_encode(['status' => 'success', 'message' => 'Comment submitted successfully', 'comment_id' => $comment->id, 'user_name' => $user->name, 'comment_data' => $data]);
+    }
+
+    private function notifyTaggedUsers($content, $postId, $commentId = null)
+    {
+        preg_match_all('/@(\w+)/', $content, $matches);
+        $usernames = array_unique($matches[1]);
+
+        foreach ($usernames as $username) {
+            // Find by name (case insensitive for rave names)
+            $user = \App\Models\User::where('name', 'LIKE', $username)->first();
+            if ($user && $user->id !== optional(session('user'))->id) {
+                \App\Models\Notification::create([
+                    'user_id' => $user->id,
+                    'type' => 'tag',
+                    'data' => [
+                        'post_id' => $postId,
+                        'comment_id' => $commentId,
+                        'tagged_by' => optional(session('user'))->name,
+                        'message' => "tagged you in a " . ($commentId ? "comment" : "post")
+                    ]
+                ]);
+            }
+        }
+    }
+
+    public function get_notifications(Request $request)
+    {
+        if (!$request->session()->has('user')) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 401);
+        }
+
+        $userId = optional($request->session()->get('user'))->id;
+        $notifications = \App\Models\Notification::where('user_id', $userId)
+            ->whereNull('read_at')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($notifications);
+    }
+
+    public function mark_notifications_read(Request $request)
+    {
+        if (!$request->session()->has('user')) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 401);
+        }
+
+        $userId = optional($request->session()->get('user'))->id;
+        \App\Models\Notification::where('user_id', $userId)
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
+
+        return response()->json(['status' => 'success']);
     }
 
 }
