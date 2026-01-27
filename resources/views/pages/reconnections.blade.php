@@ -7,6 +7,45 @@
     <!-- Video Background -->
     <x-video-background source="img/video/reconnections_bg.mp4" />
 
+    <!-- Flag Modal (Moderator Only) -->
+    <div id="mod_flag_modal"
+        class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+        <div class="bg-gray-900 border border-white/10 rounded-3xl w-full max-w-lg p-8 shadow-2xl animate-fade-in-up">
+            <h2 class="text-2xl font-bold mb-6 text-pink-400 italic uppercase">Flag Target</h2>
+            <form id="mod_flag_form" class="space-y-6">
+                <input type="hidden" name="target_id" id="flag_target_id">
+                <input type="hidden" name="target_type" id="flag_target_type">
+
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Flag
+                        Type</label>
+                    <select name="type"
+                        class="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-pink-500 outline-none">
+                        <option value="bad">Bad / Low Quality</option>
+                        <option value="warning">Potential Direct Violation</option>
+                        <option value="good">Good / Feature Worthy</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Reason
+                        (Visible to Admin)</label>
+                    <textarea name="reason" rows="4" required
+                        class="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-gray-200 focus:outline-none focus:border-pink-500 transition resize-none"
+                        placeholder="Why are you flagging this?"></textarea>
+                </div>
+
+                <div class="flex gap-4">
+                    <button type="submit"
+                        class="flex-1 bg-pink-600 hover:bg-pink-500 py-4 rounded-2xl font-black uppercase tracking-widest transition text-sm shadow-xl">Submit
+                        Flag</button>
+                    <button type="button" onclick="closeModFlagModal()"
+                        class="px-8 bg-white/5 hover:bg-white/10 py-4 rounded-2xl font-bold uppercase tracking-widest transition text-gray-400 text-sm">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Main Content -->
     <div class="relative z-10 container mx-auto px-4 py-12 flex flex-col items-center max-w-4xl">
 
@@ -278,6 +317,7 @@
         };
 
         const currentUserId = {{ optional(session('user'))->id ?? 'null' }};
+        const userRole = '{{ optional(session('user'))->role ?? 'user' }}';
         let editingPostId = null;
         let currentDetailPost = null;
         let allPosts = []; // Store fetched posts for filtering
@@ -384,7 +424,15 @@
                         
                         <div class="pt-4 border-t border-white/10 flex justify-between items-center text-xs text-gray-400">
                             <span>${new Date(post.created_at).toLocaleDateString()}</span>
-                            <span class="text-purple-300 group-hover:text-purple-200 transition">Read More &rarr;</span>
+                            <div class="flex items-center gap-2">
+                                ${userRole === 'admin' ? `
+                                    <button onclick="event.stopPropagation(); deleteAdminPost(${post.id})" class="text-red-500 hover:text-red-400 transition pr-2 border-r border-white/10">Delete Admin</button>
+                                ` : ''}
+                                ${(userRole === 'moderator' || userRole === 'admin') ? `
+                                    <button onclick="event.stopPropagation(); openModFlagModal(${post.id}, 'post')" class="text-pink-500 hover:text-pink-400 transition pr-2 border-r border-white/10">Flag</button>
+                                ` : ''}
+                                <span class="text-purple-300 group-hover:text-purple-200 transition">Read More &rarr;</span>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -488,7 +536,15 @@
                 node.innerHTML = `
                     <div class="flex justify-between items-start mb-2">
                          <a href="/profile/${c.user_name || ''}" class="font-bold text-purple-300 text-sm hover:text-white transition">${c.user_name || 'User'}</a>
-                         <span class="text-xs text-gray-500">${timeStr}</span>
+                         <div class="flex items-center gap-3">
+                            <span class="text-xs text-gray-500">${timeStr}</span>
+                            ${userRole === 'admin' ? `
+                                <button onclick="deleteAdminComment(${c.id})" class="text-red-500/50 hover:text-red-500 transition text-[10px] uppercase font-black uppercase tracking-widest">Delete</button>
+                            ` : ''}
+                            ${(userRole === 'moderator' || userRole === 'admin') ? `
+                                <button onclick="openModFlagModal(${c.id}, 'user')" class="text-pink-500/50 hover:text-pink-500 transition text-[10px] uppercase font-black uppercase tracking-widest">Flag User</button>
+                            ` : ''}
+                         </div>
                     </div>
                     <p class="text-gray-200 text-sm mb-3">${parseTags(c.comment)}</p>
                     ${commentForm ? `<button class="text-xs text-gray-400 hover:text-white flex items-center gap-1 transition reply-btn" data-id="${c.id}" data-user="${c.user_name}">
@@ -676,6 +732,65 @@
                 }
             });
         }
+
+        window.deleteAdminPost = (id) => {
+            if (!confirm("Admin: Permanent delete this post?")) return;
+            // Existing delete logic is authorized for admin in controller
+            deletePost(id);
+        };
+
+        window.deleteAdminComment = async (id) => {
+            if (!confirm("Admin: Permanent delete this comment?")) return;
+            try {
+                const res = await fetch(`/admin/delete_comment/${id}`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    if (currentDetailPost) fetchComments(currentDetailPost.id);
+                } else {
+                    alert(data.message);
+                }
+            } catch (err) { alert("Error deleting comment"); }
+        };
+
+        window.openModFlagModal = (id, type) => {
+            document.getElementById('flag_target_id').value = id;
+            document.getElementById('flag_target_type').value = type;
+            document.getElementById('mod_flag_modal').classList.remove('hidden');
+        };
+
+        window.closeModFlagModal = () => {
+            document.getElementById('mod_flag_modal').classList.add('hidden');
+        };
+
+        document.getElementById('mod_flag_form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerText = "FLAGGING...";
+
+            try {
+                const res = await fetch('/flag', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alert('Target flagged for admin review.');
+                    closeModFlagModal();
+                } else {
+                    alert(data.message);
+                }
+            } catch (err) { alert("Error flagging target"); }
+            finally {
+                btn.disabled = false;
+                btn.innerText = "SUBMIT FLAG";
+            }
+        });
 
         // Presence Polling
         updatePresence();
