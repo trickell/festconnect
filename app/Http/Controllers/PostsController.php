@@ -165,14 +165,20 @@ class PostsController extends BaseController
             return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 401);
         }
 
-        $userId = $request->session()->get('user')->id;
+        $sessionUser = $request->session()->get('user');
+        $userId = is_object($sessionUser) ? $sessionUser->getKey() : (is_array($sessionUser) ? $sessionUser['id'] : null);
+
+        // Final check against DB to ensure latest role
+        $dbUser = \App\Models\User::find($userId);
+        $isAdmin = $dbUser && $dbUser->role === 'admin';
+
         $post = \App\Models\Posts::with('comments')->find($id);
 
         if (!$post) {
             return response()->json(['status' => 'error', 'message' => 'Post not found'], 404);
         }
 
-        if ($post->user_id !== $userId) {
+        if ($post->user_id !== $userId && !$isAdmin) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 403);
         }
 
@@ -328,7 +334,8 @@ class PostsController extends BaseController
 
     private function notifyTaggedUsers($content, $postId, $commentId = null)
     {
-        preg_match_all('/@(\w+)/', $content, $matches);
+        // Match @username (stops at space, comma, period, etc.)
+        preg_match_all('/@([a-zA-Z0-9_.-]+)/', $content, $matches);
         $usernames = array_unique($matches[1]);
 
         foreach ($usernames as $username) {
@@ -355,7 +362,8 @@ class PostsController extends BaseController
             return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 401);
         }
 
-        $userId = optional($request->session()->get('user'))->id;
+        $sessionUser = $request->session()->get('user');
+        $userId = is_object($sessionUser) ? $sessionUser->getKey() : (is_array($sessionUser) ? $sessionUser['id'] : null);
         $notifications = \App\Models\Notification::where('user_id', $userId)
             ->whereNull('read_at')
             ->orderBy('created_at', 'desc')
@@ -370,7 +378,9 @@ class PostsController extends BaseController
             return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 401);
         }
 
-        $userId = optional($request->session()->get('user'))->id;
+        $sessionUser = $request->session()->get('user');
+        $userId = is_object($sessionUser) ? $sessionUser->getKey() : (is_array($sessionUser) ? $sessionUser['id'] : null);
+
         \App\Models\Notification::where('user_id', $userId)
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
@@ -378,4 +388,22 @@ class PostsController extends BaseController
         return response()->json(['status' => 'success']);
     }
 
+    public function admin_delete_comment($id, Request $request)
+    {
+        if (!$request->session()->has('user') || optional($request->session()->get('user'))->role !== 'admin') {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 401);
+        }
+
+        $comment = \App\Models\Comments::find($id);
+        if (!$comment) {
+            return response()->json(['status' => 'error', 'message' => 'Comment not found'], 404);
+        }
+
+        try {
+            $comment->delete();
+            return response()->json(['status' => 'success', 'message' => 'Comment deleted successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => 'Deletion failed', 'error' => $e->getMessage()]);
+        }
+    }
 }

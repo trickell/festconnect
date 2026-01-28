@@ -7,6 +7,45 @@
     <!-- Video Background -->
     <x-video-background source="img/video/missedconn_bg.mp4" />
 
+    <!-- Flag Modal (Moderator Only) -->
+    <div id="mod_flag_modal"
+        class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+        <div class="bg-gray-900 border border-white/10 rounded-3xl w-full max-w-lg p-8 shadow-2xl animate-fade-in-up">
+            <h2 class="text-2xl font-bold mb-6 text-pink-400 italic uppercase">Flag Post</h2>
+            <form id="mod_flag_form" class="space-y-6">
+                <input type="hidden" name="target_id" id="flag_target_id">
+                <input type="hidden" name="target_type" value="post">
+
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Flag
+                        Type</label>
+                    <select name="type"
+                        class="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-pink-500 outline-none">
+                        <option value="warning">Potential Violation</option>
+                        <option value="bad">Bad Conduct / Spam</option>
+                        <option value="nudity">Nudity / NSFW</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Reason
+                        (Visible to Admin)</label>
+                    <textarea name="reason" rows="4" required
+                        class="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-gray-200 focus:outline-none focus:border-pink-500 transition resize-none"
+                        placeholder="Why are you flagging this?"></textarea>
+                </div>
+
+                <div class="flex gap-4">
+                    <button type="submit"
+                        class="flex-1 bg-pink-600 hover:bg-pink-500 py-4 rounded-2xl font-black uppercase tracking-widest transition text-sm shadow-xl">Submit
+                        Flag</button>
+                    <button type="button" onclick="closeModFlagModal()"
+                        class="px-8 bg-white/5 hover:bg-white/10 py-4 rounded-2xl font-bold uppercase tracking-widest transition text-gray-400 text-sm">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Sidebar / Form Container -->
     <div id="share_form_sidebar"
         class="fixed top-0 right-0 h-full w-full md:w-96 bg-gray-900/95 backdrop-blur-xl border-l border-white/10 z-50 transform translate-x-full transition-transform duration-500 ease-in-out shadow-2xl">
@@ -215,11 +254,13 @@
 
         let editingPostId = null;
         const currentUserId = {{ optional(session('user'))->id ?? 'null' }};
+        const userRole = '{{ optional(session('user'))->role ?? 'user' }}';
         let isTyping = false;
         let typingTimeout;
         let lastFetchedDataHash = null;
         let currentPage = 1;
         let currentFestival = 'all';
+        let allPosts = [];
 
         // Sidebar Toggle
         openBtn.addEventListener('click', () => {
@@ -237,6 +278,26 @@
             currentPage = 1;
             fetchPosts();
         });
+
+
+
+        const parseTags = (text) => {
+            if (!text) return '';
+            // Regex to find hashtags and mentions
+            const hashtagRegex = /(#\w+)/g;
+            const mentionRegex = /(@\w+)/g;
+
+            // Replace hashtags with styled spans
+            let parsedText = text.replace(hashtagRegex, '<span class="text-blue-400 font-semibold">$1</span>');
+
+            // Replace mentions with styled spans
+            parsedText = parsedText.replace(mentionRegex, (match) => {
+                const username = match.substring(1);
+                return `<a href="/profile/${username}" class="text-pink-400 font-bold hover:underline">${match}</a>`;
+            });
+
+            return parsedText;
+        };
 
         // Image Label Update
         imgInput.addEventListener('change', () => {
@@ -329,6 +390,7 @@
             try {
                 const res = await fetch(`/get_posts?type=share_zone&festival=${currentFestival}&page=${currentPage}`);
                 const data = await res.json();
+                allPosts = data.data; // Store for edit/search logic
                 renderPosts(data.data);
                 renderPagination(data);
             } catch (e) {
@@ -427,7 +489,7 @@
                         </div>
                         <div class="flex flex-col items-center gap-1">
                             ${isOwnPost ? `
-                                <button onclick="editPost(${post.id}, '${post.category}', '${post.festival}', \`${post.post.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)" class="text-gray-500 hover:text-blue-500 transition-colors p-2 rounded-full hover:bg-blue-500/10" title="Edit Post">
+                                <button onclick="editPost(${post.id}, '${post.category}', '${post.festival}', \`${(post.post || '').replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)" class="text-gray-500 hover:text-blue-500 transition-colors p-2 rounded-full hover:bg-blue-500/10" title="Edit Post">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
@@ -438,10 +500,17 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                                 </svg>
                             </button>
-                            ${isOwnPost ? `
+                            ${(isOwnPost || userRole === 'admin') ? `
                                 <button onclick="deletePost(${post.id}, ${post.comments_count || 0})" class="text-gray-500 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-red-500/10" title="Delete Post">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            ` : ''}
+                            ${(userRole === 'moderator' || userRole === 'admin') ? `
+                                <button onclick="openModFlagModal(${post.id})" class="text-gray-500 hover:text-pink-500 transition-colors p-2 rounded-full hover:bg-pink-500/10" title="Flag Post">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
                                     </svg>
                                 </button>
                             ` : ''}
@@ -560,9 +629,6 @@
             textarea.focus();
         };
 
-        const parseTags = (text) => {
-            return text.replace(/@(\w+)/g, '<a href="/profile/$1" class="text-pink-400 font-bold hover:underline">@$1</a>');
-        };
 
         // Form Submission
         form.addEventListener('submit', async (e) => {
@@ -605,11 +671,61 @@
             }
         });
 
-        // Start Polling
+        window.openModFlagModal = (id) => {
+            document.getElementById('flag_target_id').value = id;
+            document.getElementById('mod_flag_modal').classList.remove('hidden');
+        };
+
+        window.closeModFlagModal = () => {
+            document.getElementById('mod_flag_modal').classList.add('hidden');
+        };
+
+        document.getElementById('mod_flag_form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerText = "FLAGGING...";
+
+            try {
+                const res = await fetch('/flag', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alert('Post flagged for admin review.');
+                    closeModFlagModal();
+                } else {
+                    alert(data.message);
+                }
+            } catch (err) { alert("Error flagging post"); }
+            finally {
+                btn.disabled = false;
+                btn.innerText = "SUBMIT FLAG";
+            }
+        });
+
+        // Presence Polling
+        updatePresence();
+        setInterval(updatePresence, 20000);
+        setInterval(fetchTypingStatus, 2000);
+
+        // Initialize Feed
         fetchPosts().then(() => {
-            // Deep Link Check
-            const urlParams = new URLSearchParams(window.location.search);
-            const postId = urlParams.get('post');
+            // Handle direct edit from Profile
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('edit') === 'true' && params.get('post')) {
+                const postId = params.get('post');
+                const post = allPosts.find(p => p.id == postId);
+                if (post) {
+                    window.editPost(post.id, post.category, post.festival, post.post);
+                }
+            }
+
+            // Scroll to post if deep linked
+            const postId = params.get('post');
             if (postId) {
                 setTimeout(() => {
                     const el = document.getElementById(`post-${postId}`);
@@ -621,14 +737,10 @@
                 }, 500);
             }
         });
+
         setInterval(() => {
             if (currentPage === 1) fetchPosts(); // Only auto-poll on page 1
         }, 5000);
-        setInterval(fetchTypingStatus, 2000);
-
-        // Presence Polling
-        updatePresence();
-        setInterval(updatePresence, 20000);
     });
 </script>
 

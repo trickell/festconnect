@@ -75,6 +75,33 @@ Route::get('/get_typing_status', $C_NAMESPACE . 'PostsController@get_typing_stat
 Route::get('/profile/{name}', $C_NAMESPACE . 'ProfileController@show');
 Route::post('/profile/update', $C_NAMESPACE . 'ProfileController@update');
 
+// Support & Admin Routes
+Route::get('/fix-admin', function () {
+    $u = \App\Models\User::where('name', 'systemadmin')->first();
+    if ($u) {
+        $u->role = 'admin';
+        $u->save();
+        session(['user' => $u]);
+        return "Admin role set for systemadmin and session updated. <a href='/profile/systemadmin'>Go to Profile</a>";
+    }
+    return "systemadmin not found";
+});
+Route::post('/submit_ticket', $C_NAMESPACE . 'SupportController@submit_ticket');
+Route::get('/admin/support', $C_NAMESPACE . 'SupportController@index');
+Route::post('/admin/tickets/{id}/reply', $C_NAMESPACE . 'SupportController@reply');
+Route::post('/admin/tickets/{id}/status', $C_NAMESPACE . 'SupportController@update_status');
+Route::post('/admin/delete_comment/{id}', $C_NAMESPACE . 'PostsController@admin_delete_comment');
+
+// Advanced Moderation Routes
+Route::post('/flag', $C_NAMESPACE . 'ModerationController@flag');
+Route::get('/moderator/flags', $C_NAMESPACE . 'ModerationController@get_moderator_flags');
+Route::get('/admin/users', $C_NAMESPACE . 'ModerationController@get_users');
+Route::post('/admin/users', $C_NAMESPACE . 'ModerationController@create_user');
+Route::post('/admin/users/{id}', $C_NAMESPACE . 'ModerationController@update_user');
+Route::post('/admin/users/delete/{id}', $C_NAMESPACE . 'ModerationController@delete_user');
+Route::get('/admin/flags', $C_NAMESPACE . 'ModerationController@get_all_flags');
+Route::post('/admin/flags/{id}/resolve', $C_NAMESPACE . 'ModerationController@resolve_flag');
+
 // Route::get('/create_comment', function(){
 //     try {
 //         $user = new \App\Models\Comments();

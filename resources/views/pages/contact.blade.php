@@ -20,14 +20,14 @@
                 Have a question, suggestion, or need help with a post? Reach out to our moderation team.
             </p>
 
-            <form action="#" method="POST" class="space-y-6">
+            <form id="contact_form" class="space-y-6">
                 @csrf
                 <div class="space-y-2">
                     <label for="name" class="block text-purple-300 font-semibold text-sm uppercase tracking-wide">Your
                         Name</label>
                     <input type="text" id="name" name="name"
                         class="w-full px-4 py-3 rounded-lg bg-black/40 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition"
-                        placeholder="How should we address you?" required>
+                        placeholder="How should we address you?" value="{{ optional(session('user'))->name }}" required>
                 </div>
 
                 <div class="space-y-2">
@@ -35,7 +35,7 @@
                         Email</label>
                     <input type="email" id="email" name="email"
                         class="w-full px-4 py-3 rounded-lg bg-black/40 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition"
-                        placeholder="Where can we reply?" required>
+                        placeholder="Where can we reply?" value="{{ optional(session('user'))->email }}" required>
                 </div>
 
                 <div class="space-y-2">
@@ -58,11 +58,55 @@
                         placeholder="Tell us what's on your mind..." required></textarea>
                 </div>
 
-                <button type="submit"
+                <div id="form_message" class="hidden p-4 rounded-lg text-sm font-bold text-center"></div>
+
+                <button type="submit" id="submit_btn"
                     class="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-lg shadow-lg transform hover:scale-[1.02] transition-all">
                     Send Message
                 </button>
             </form>
+
+            <script>
+                document.getElementById('contact_form').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const form = e.target;
+                    const btn = document.getElementById('submit_btn');
+                    const msg = document.getElementById('form_message');
+
+                    btn.innerText = "SENDING...";
+                    btn.disabled = true;
+                    msg.classList.add('hidden');
+
+                    const formData = new FormData(form);
+
+                    try {
+                        const res = await fetch('{{ url("/submit_ticket") }}', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await res.json();
+
+                        msg.innerText = data.message;
+                        msg.classList.remove('hidden');
+
+                        if (data.status === 'success') {
+                            msg.className = "p-4 rounded-lg text-sm font-bold text-center bg-green-500/20 text-green-400 mb-6";
+                            form.reset();
+                            btn.innerText = "MESSAGE SENT!";
+                        } else {
+                            msg.className = "p-4 rounded-lg text-sm font-bold text-center bg-red-500/20 text-red-400 mb-6";
+                            btn.innerText = "SEND MESSAGE";
+                            btn.disabled = false;
+                        }
+                    } catch (err) {
+                        msg.innerText = "Something went wrong. Please try again.";
+                        msg.className = "p-4 rounded-lg text-sm font-bold text-center bg-red-500/20 text-red-400 mb-6";
+                        msg.classList.remove('hidden');
+                        btn.disabled = false;
+                        btn.innerText = "SEND MESSAGE";
+                    }
+                });
+            </script>
         </div>
 
         <div class="mt-8 text-gray-400 text-sm">

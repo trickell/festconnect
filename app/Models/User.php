@@ -21,14 +21,15 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
         'profile_image',
         'about_me',
         'festivals',
         'genres',
-        'last_seen_at'
+        'last_seen_at',
+        'penalty_marks',
+        'banned_until'
     ];
-
-
 
     /**
      * The attributes that should be hidden for serialization.
@@ -50,6 +51,7 @@ class User extends Authenticatable
         'password' => 'hashed',
         'genres' => 'array',
         'last_seen_at' => 'datetime',
+        'banned_until' => 'datetime',
     ];
 
     public function posts()

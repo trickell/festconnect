@@ -12,14 +12,47 @@ class ProfileController extends BaseController
 {
     public function show($name)
     {
-        $user = User::where('name', $name)->firstOrFail();
+        $user = User::where('name', $name)->with('posts')->firstOrFail();
 
         $isOwner = false;
+        $viewer = null;
         if (session()->has('user')) {
-            $isOwner = optional(session('user'))->id === $user->id;
+            $sessionUser = session('user');
+            $sid = is_object($sessionUser) ? $sessionUser->getKey() : (is_array($sessionUser) ? $sessionUser['id'] : null);
+            $viewer = User::find($sid);
+            if ($viewer) {
+                session(['user' => $viewer]);
+                $isOwner = $viewer->id === $user->id;
+            }
         }
 
-        return view('pages.profile', compact('user', 'isOwner'));
+        // Fetch penalties (flags targeted at this user or their posts) - visible to owner or admin
+        $penalties = [];
+        if ($isOwner || (optional($viewer)->role === 'admin')) {
+            $userPostIds = $user->posts->pluck('id')->toArray();
+
+            $penalties = \App\Models\ModerationFlag::where(function ($query) use ($user, $userPostIds) {
+                $query->where(function ($q) use ($user) {
+                    $q->where('target_id', $user->id)->where('target_type', 'user');
+                })->orWhere(function ($q) use ($userPostIds) {
+                    $q->whereIn('target_id', $userPostIds)->where('target_type', 'post');
+                });
+            })
+                ->whereIn('status', ['pending', 'warned', 'removed'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
+
+        // Fetch flags created by this user (if moderator/admin)
+        $modFlags = [];
+        if ($user->role === 'moderator' || $user->role === 'admin') {
+            $modFlags = \App\Models\ModerationFlag::where('moderator_id', $user->id)
+                ->with(['post', 'targetUser'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
+
+        return view('pages.profile', compact('user', 'isOwner', 'penalties', 'modFlags', 'viewer'));
     }
 
     public function update(Request $request)
@@ -28,8 +61,15 @@ class ProfileController extends BaseController
             return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 401);
         }
 
-        $userId = optional(session('user'))->id;
-        $user = User::find($userId);
+        $viewer = session('user');
+        $userId = $request->input('user_id', $viewer ? $viewer->getKey() : null);
+
+        // If updating someone else, must be admin
+        if ($userId != optional($viewer)->getKey() && optional($viewer)->role !== 'admin') {
+            return response()->json(['status' => 'error', 'message' => 'Forbidden'], 403);
+        }
+
+        $user = User::findOrFail($userId);
 
         $data = $request->only(['about_me', 'festivals', 'genres']);
 
