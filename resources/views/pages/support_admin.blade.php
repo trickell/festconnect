@@ -55,7 +55,7 @@
                             <div class="flex items-center gap-4 flex-wrap">
                                 <span
                                     class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest 
-                                                {{ $ticket->status === 'open' ? 'bg-green-500/20 text-green-400' : ($ticket->status === 'resolved' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-400') }}">
+                                                    {{ $ticket->status === 'open' ? 'bg-green-500/20 text-green-400' : ($ticket->status === 'resolved' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-400') }}">
                                     {{ $ticket->status }}
                                 </span>
                                 <span
@@ -303,7 +303,7 @@
                 <div class="flex flex-col lg:flex-row justify-between gap-6">
                     <div class="flex-grow space-y-3">
                         <div class="flex items-center gap-3">
-                            <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${flag.type === 'good' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-500'}">${flag.type} Flag</span>
+                            <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${flag.type === 'nudity' ? 'bg-red-600 text-white' : (flag.type === 'bad' ? 'bg-red-500/20 text-red-500' : 'bg-orange-500/20 text-orange-400')}">${flag.type} Flag</span>
                             <span class="text-gray-500 text-[10px] font-mono italic">by Moderator: ${flag.moderator ? flag.moderator.name : 'Unknown'}</span>
                             <span class="text-xs font-bold text-gray-400">Target: <span class="text-white">${flag.target_type} #${flag.target_id}</span></span>
                         </div>

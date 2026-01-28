@@ -22,7 +22,7 @@ class ModerationController extends BaseController
         $data = $request->validate([
             'target_id' => 'required|integer',
             'target_type' => 'required|in:post,user',
-            'type' => 'required|in:good,bad,warning',
+            'type' => 'required|in:warning,bad,nudity',
             'reason' => 'required|string',
         ]);
 

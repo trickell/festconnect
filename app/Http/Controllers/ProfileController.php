@@ -26,12 +26,19 @@ class ProfileController extends BaseController
             }
         }
 
-        // Fetch penalties (flags targeted at this user) - visible to owner or admin
+        // Fetch penalties (flags targeted at this user or their posts) - visible to owner or admin
         $penalties = [];
         if ($isOwner || (optional($viewer)->role === 'admin')) {
-            $penalties = \App\Models\ModerationFlag::where('target_id', $user->id)
-                ->where('target_type', 'user')
-                ->whereIn('status', ['pending', 'warned'])
+            $userPostIds = $user->posts->pluck('id')->toArray();
+
+            $penalties = \App\Models\ModerationFlag::where(function ($query) use ($user, $userPostIds) {
+                $query->where(function ($q) use ($user) {
+                    $q->where('target_id', $user->id)->where('target_type', 'user');
+                })->orWhere(function ($q) use ($userPostIds) {
+                    $q->whereIn('target_id', $userPostIds)->where('target_type', 'post');
+                });
+            })
+                ->whereIn('status', ['pending', 'warned', 'removed'])
                 ->orderBy('created_at', 'desc')
                 ->get();
         }
