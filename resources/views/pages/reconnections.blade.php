@@ -682,11 +682,12 @@
                     form.reset();
                     showPosts();
                 } else {
-                    alert('Error: ' + (data.message || 'Submission failed'));
+                    console.error("Submission error details:", data);
+                    alert('Error: ' + (data.message || 'Submission failed') + (data.error ? '\n\n' + data.error : ''));
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('An error occurred. Please try again.');
+                alert('An error occurred. Check console for details.');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerText = originalText;

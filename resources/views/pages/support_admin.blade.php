@@ -6,7 +6,7 @@
 <div class="relative min-h-screen py-24 bg-black text-white overflow-hidden" x-data="{ tab: 'tickets' }">
     <!-- Background Decor -->
     <!-- Video Background -->
-    <x-video-background source="img/video/admin_bg.mp4" />
+    <x-video-background source="img/video/admin2_bg.mp4" />
 
     <div
         class="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-indigo-900/20 to-transparent pointer-events-none">
@@ -55,7 +55,7 @@
                             <div class="flex items-center gap-4 flex-wrap">
                                 <span
                                     class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest 
-                                                    {{ $ticket->status === 'open' ? 'bg-green-500/20 text-green-400' : ($ticket->status === 'resolved' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-400') }}">
+                                                        {{ $ticket->status === 'open' ? 'bg-green-500/20 text-green-400' : ($ticket->status === 'resolved' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-400') }}">
                                     {{ $ticket->status }}
                                 </span>
                                 <span

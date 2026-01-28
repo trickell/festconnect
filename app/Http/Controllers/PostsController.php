@@ -59,11 +59,14 @@ class PostsController extends BaseController
         return json_encode($formatted);
     }
 
-    // Handles the submission of a post
     public function submit_post(Request $request)
     {
         // Merge userid with data
-        $userid = $request->session()->get('user')->id;
+        $sessionUser = session('user');
+        if (!$sessionUser) {
+            return json_encode(['status' => 'error', 'message' => 'Unauthorized: No active session']);
+        }
+        $userid = is_object($sessionUser) ? $sessionUser->getKey() : (is_array($sessionUser) ? $sessionUser['id'] : null);
         $request->merge(['user_id' => $userid]);
 
         $data = request()->except(['_token', '_method']);

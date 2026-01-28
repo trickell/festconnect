@@ -661,10 +661,12 @@
                     currentPage = 1; // Reset to page 1 to see new post
                     fetchPosts(); // Immediate refresh
                 } else {
-                    alert(data.message);
+                    console.error("Submission error details:", data);
+                    alert('Error: ' + (data.message || 'Submission failed') + (data.error ? '\n\n' + data.error : ''));
                 }
             } catch (e) {
-                alert("Error posting your moment.");
+                console.error("Fetch error:", e);
+                alert("Error posting your moment. Check console for details.");
             } finally {
                 btn.disabled = false;
                 btn.innerText = "POST NOW";
