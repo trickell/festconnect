@@ -6,7 +6,7 @@
 <div class="relative min-h-screen py-24 bg-black text-white overflow-hidden" x-data="{ tab: 'tickets' }">
     <!-- Background Decor -->
     <!-- Video Background -->
-    <x-video-background source="img/video/admin2_bg.mp4" />
+    <x-video-background source="img/video/admin_bg.mp4" />
 
     <div
         class="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-indigo-900/20 to-transparent pointer-events-none">
@@ -55,7 +55,7 @@
                             <div class="flex items-center gap-4 flex-wrap">
                                 <span
                                     class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest 
-                                                            {{ $ticket->status === 'open' ? 'bg-green-500/20 text-green-400' : ($ticket->status === 'resolved' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-400') }}">
+                                                {{ $ticket->status === 'open' ? 'bg-green-500/20 text-green-400' : ($ticket->status === 'resolved' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-400') }}">
                                     {{ $ticket->status }}
                                 </span>
                                 <span
@@ -197,16 +197,6 @@
                         class="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-purple-500 outline-none">
                 </div>
             </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div><label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Penalty
-                        Marks</label><input type="number" name="penalty_marks"
-                        class="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-purple-500 outline-none">
-                </div>
-                <div><label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Banned
-                        Until (ISO Date)</label><input type="text" name="banned_until" placeholder="YYYY-MM-DD HH:MM:SS"
-                        class="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-purple-500 outline-none">
-                </div>
-            </div>
             <div class="flex gap-4 mt-6">
                 <button type="submit"
                     class="flex-1 bg-purple-600 hover:bg-purple-500 py-4 rounded-2xl font-black uppercase tracking-widest transition text-sm shadow-xl">Save
@@ -257,12 +247,9 @@
                     <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold text-lg uppercase">${user.name.charAt(0)}</div>
                     <div><h4 class="font-bold text-white group-hover:text-purple-400 transition">${user.name}</h4><p class="text-[10px] text-gray-500 font-mono tracking-tighter">${user.email}</p></div>
                 </div>
-                <div class="flex items-center justify-between mb-4">
-                    <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${user.role === 'admin' ? 'bg-indigo-500/20 text-indigo-400' : (user.role === 'moderator' ? 'bg-purple-500/20 text-purple-400' : 'bg-gray-500/20 text-gray-500')}">${user.role}</span>
-                    <span class="text-[10px] font-bold ${user.penalty_marks >= 5 ? 'text-red-500' : 'text-gray-400'}">${user.penalty_marks} Marks</span>
-                </div>
+                <div class="flex items-center justify-between mb-4"><span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${user.role === 'admin' ? 'bg-indigo-500/20 text-indigo-400' : (user.role === 'moderator' ? 'bg-purple-500/20 text-purple-400' : 'bg-gray-500/20 text-gray-500')}">${user.role}</span></div>
                 <div class="flex gap-2">
-                    <button onclick="editUser(${user.id}, '${user.name}', '${user.email}', '${user.role}', ${user.penalty_marks}, '${user.banned_until || ''}')" class="flex-1 bg-white/5 hover:bg-purple-600/20 py-2 rounded-xl text-[9px] font-bold uppercase tracking-widest text-gray-400 hover:text-purple-400 border border-white/5 transition">Edit Profile</button>
+                    <button onclick="editUser(${user.id}, '${user.name}', '${user.email}', '${user.role}')" class="flex-1 bg-white/5 hover:bg-purple-600/20 py-2 rounded-xl text-[9px] font-bold uppercase tracking-widest text-gray-400 hover:text-purple-400 border border-white/5 transition">Edit Profile</button>
                     ${user.name !== 'systemadmin' ? `<button onclick="deleteUser(${user.id})" class="bg-red-500/10 hover:bg-red-500/30 p-2 rounded-xl text-red-500 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>` : ''}
                 </div>
             </div>
@@ -276,13 +263,11 @@
         document.getElementById('user_modal').classList.remove('hidden');
     }
 
-    function editUser(id, name, email, role, marks, banned) {
+    function editUser(id, name, email, role) {
         document.getElementById('edit_user_id').value = id;
         document.getElementById('user_form').querySelector('input[name="name"]').value = name;
         document.getElementById('user_form').querySelector('input[name="email"]').value = email;
         document.getElementById('user_form').querySelector('select[name="role"]').value = role;
-        document.getElementById('user_form').querySelector('input[name="penalty_marks"]').value = marks || 0;
-        document.getElementById('user_form').querySelector('input[name="banned_until"]').value = banned || '';
         document.getElementById('user_modal_title').innerText = `Edit: ${name}`;
         document.getElementById('user_modal').classList.remove('hidden');
     }
@@ -318,7 +303,7 @@
                 <div class="flex flex-col lg:flex-row justify-between gap-6">
                     <div class="flex-grow space-y-3">
                         <div class="flex items-center gap-3">
-                            <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${flag.type === 'nudity' ? 'bg-red-600 text-white' : (flag.type === 'bad' ? 'bg-red-500/20 text-red-500' : 'bg-orange-500/20 text-orange-400')}">${flag.type} Flag</span>
+                            <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${flag.type === 'good' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-500'}">${flag.type} Flag</span>
                             <span class="text-gray-500 text-[10px] font-mono italic">by Moderator: ${flag.moderator ? flag.moderator.name : 'Unknown'}</span>
                             <span class="text-xs font-bold text-gray-400">Target: <span class="text-white">${flag.target_type} #${flag.target_id}</span></span>
                         </div>

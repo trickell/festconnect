@@ -21,9 +21,9 @@
                         Type</label>
                     <select name="type"
                         class="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-pink-500 outline-none">
-                        <option value="warning">Potential Violation</option>
-                        <option value="bad">Bad Conduct / Spam</option>
-                        <option value="nudity">Nudity / NSFW</option>
+                        <option value="bad">Bad / Low Quality</option>
+                        <option value="warning">Potential Direct Violation</option>
+                        <option value="good">Good / Feature Worthy</option>
                     </select>
                 </div>
 
@@ -707,12 +707,7 @@
             }
         });
 
-        // Presence Polling
-        updatePresence();
-        setInterval(updatePresence, 20000);
-        setInterval(fetchTypingStatus, 2000);
-
-        // Initialize Feed
+        // Start Polling
         fetchPosts().then(() => {
             // Handle direct edit from Profile
             const params = new URLSearchParams(window.location.search);

@@ -22,7 +22,7 @@ class ModerationController extends BaseController
         $data = $request->validate([
             'target_id' => 'required|integer',
             'target_type' => 'required|in:post,user',
-            'type' => 'required|in:warning,bad,nudity',
+            'type' => 'required|in:good,bad,warning',
             'reason' => 'required|string',
         ]);
 
@@ -30,28 +30,6 @@ class ModerationController extends BaseController
 
         try {
             $flag = ModerationFlag::create($data);
-
-            // Fetch target user for notification
-            $targetUserId = null;
-            if ($data['target_type'] === 'post') {
-                $post = Posts::find($data['target_id']);
-                $targetUserId = $post ? $post->user_id : null;
-            } else {
-                $targetUserId = $data['target_id'];
-            }
-
-            if ($targetUserId) {
-                Notification::create([
-                    'user_id' => $targetUserId,
-                    'type' => 'moderation_action',
-                    'data' => [
-                        'flag_id' => $flag->id,
-                        'status' => 'pending',
-                        'message' => "Your " . $data['target_type'] . " has been flagged for review (" . $data['type'] . "). A moderator is checking it now."
-                    ]
-                ]);
-            }
-
             return response()->json(['status' => 'success', 'message' => 'Flag created successfully.']);
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => 'Failed to create flag.']);
@@ -104,8 +82,6 @@ class ModerationController extends BaseController
             'role' => 'sometimes|in:user,admin,moderator',
             'about_me' => 'sometimes|string|nullable',
             'festivals' => 'sometimes|string|nullable',
-            'penalty_marks' => 'sometimes|integer',
-            'banned_until' => 'sometimes|date|nullable'
         ]);
 
         if ($request->filled('password')) {
@@ -154,49 +130,26 @@ class ModerationController extends BaseController
         $flag->update($data);
 
         // Notify content/user owner
-        $targetUser = null;
+        $targetUserId = null;
         if ($flag->target_type === 'post') {
             $post = Posts::find($flag->target_id);
-            if ($post) {
-                $targetUser = User::find($post->user_id);
-                if ($data['status'] === 'removed') {
-                    $post->delete();
-                }
+            $targetUserId = $post ? $post->user_id : null;
+
+            if ($data['status'] === 'removed' && $post) {
+                $post->delete();
             }
         } else {
-            $targetUser = User::find($flag->target_id);
+            $targetUserId = $flag->target_id;
         }
 
-        if ($targetUser) {
-            // Apply penalty mark if not cleared
-            $penaltyApplied = false;
-            $banned = false;
-            if ($data['status'] !== 'cleared') {
-                $targetUser->increment('penalty_marks');
-                $penaltyApplied = true;
-
-                if ($targetUser->penalty_marks >= 5) {
-                    $targetUser->update(['banned_until' => now()->addMonth()]);
-                    $banned = true;
-                }
-            }
-
-            $message = "An admin has reviewed a flag on your account (" . $data['status'] . "): " . $data['admin_comment'];
-            if ($banned) {
-                $message .= " You have reached 5 marks and are BANNED for 1 month.";
-            } elseif ($penaltyApplied) {
-                $message .= " You now have " . $targetUser->penalty_marks . " penalty marks.";
-            }
-
+        if ($targetUserId) {
             Notification::create([
-                'user_id' => $targetUser->id,
+                'user_id' => $targetUserId,
                 'type' => 'moderation_action',
                 'data' => [
                     'flag_id' => $flag->id,
                     'status' => $data['status'],
-                    'penalty_marks' => $targetUser->penalty_marks,
-                    'is_banned' => $banned,
-                    'message' => $message
+                    'message' => "An admin has reviewed a flag on your account/content: " . $data['admin_comment']
                 ]
             ]);
         }
