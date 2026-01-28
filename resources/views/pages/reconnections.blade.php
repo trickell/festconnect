@@ -418,7 +418,7 @@
                     <div class="p-5">
                         <div class="flex items-center gap-2 mb-2">
                             <a href="/profile/${post.user ? post.user.name : ''}" class="text-lg font-bold text-white line-clamp-1 hover:text-purple-300 transition">${post.user ? post.user.name : 'Someone'} is looking...</a>
-                            <div class="w-2.5 h-2.5 rounded-full ${post.user && post.user.last_seen_at && (new Date() - new Date(post.user.last_seen_at) < 60000) ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-500'}"></div>
+                            <div class="w-2.5 h-2.5 rounded-full ${post.user && post.user.last_seen_at && (new Date() - new Date(post.user.last_seen_at) < 120000) ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-500'}"></div>
                         </div>
                         <p class="text-gray-300 text-sm line-clamp-3 leading-relaxed mb-4">${parseTags(post.missed_conn || post.post)}</p>
                         

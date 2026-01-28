@@ -8,6 +8,7 @@
     <x-video-background source="img/video/missedconn_bg.mp4" />
 
     <!-- Flag Modal (Moderator Only) -->
+    <!-- Added penelty system for moderators to flag posts -->
     <div id="mod_flag_modal"
         class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
         <div class="bg-gray-900 border border-white/10 rounded-3xl w-full max-w-lg p-8 shadow-2xl animate-fade-in-up">
@@ -437,7 +438,7 @@
             posts.forEach(post => {
                 const isOwnPost = post.user_id === currentUserId;
                 const lastSeen = post.user && post.user.last_seen_at ? new Date(post.user.last_seen_at) : null;
-                const isOnline = lastSeen && (new Date() - lastSeen < 60000);
+                const isOnline = lastSeen && (new Date() - lastSeen < 120000);
                 const statusColor = isOnline ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-red-500';
 
                 const existingCard = document.getElementById(`post-${post.id}`);
@@ -527,7 +528,13 @@
                         ${imagesHtml}
                         <div class="flex items-center justify-between pt-4 mt-4 border-t border-white/5">
                             <div class="flex flex-col">
-                                <a href="/profile/${post.user ? post.user.name : ''}" class="text-[11px] font-bold text-gray-400 uppercase tracking-wider hover:text-white transition">${post.user ? post.user.name : 'Unknown'}</a>
+                                <a href="/profile/${post.user ? post.user.name : ''}" 
+                                class="text-[11px] font-bold ${(post.user.role === 'moderator' || post.user.role === 'admin') ? 'text-purple-500' : 'text-gray-400'} 
+                                uppercase tracking-wider hover:text-white transition">
+                                ${post.user ? post.user.name : 'Unknown'}
+                                ${post.user.role === 'moderator' ? ' (Moderator)' : ''}
+                                ${post.user.role === 'admin' ? ' (Admin)' : ''}
+                                </a>
                                 ${replyingTo}
                             </div>
                             <span class="text-[10px] text-gray-600 font-mono italic">${new Date(post.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>

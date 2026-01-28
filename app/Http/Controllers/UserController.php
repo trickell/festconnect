@@ -19,6 +19,7 @@ class UserController extends BaseController
         if (Hash::check($data['password'], $user->password)) {
             // Store the user data for easy access later in a session.
             session(['user' => $user]);
+            $user->update(['last_seen_at' => now()]);
 
             // send user data back and success status request
             return json_encode(['status' => 'success', 'message' => 'Login successful', 'user' => $user]);
@@ -69,8 +70,12 @@ class UserController extends BaseController
             return json_encode(['status' => 'error', 'message' => 'Unauthorized']);
         }
 
-        $userId = optional(session('user'))->id;
-        \App\Models\User::where('id', $userId)->update(['last_seen_at' => now()]);
+        $sessionUser = session('user');
+        $userId = is_object($sessionUser) ? $sessionUser->getKey() : (is_array($sessionUser) ? $sessionUser['id'] : null);
+
+        if ($userId) {
+            \App\Models\User::where('id', $userId)->update(['last_seen_at' => now()]);
+        }
 
         return json_encode(['status' => 'success']);
     }

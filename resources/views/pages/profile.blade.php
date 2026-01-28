@@ -68,7 +68,7 @@
                     </div>
                     @php
                         $lastSeen = $user->last_seen_at;
-                        $isOnline = $lastSeen && now()->diffInMinutes($lastSeen) < 1;
+                        $isOnline = $lastSeen && now()->diffInMinutes($lastSeen) < 2;
                         $statusColor = $isOnline ? 'bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.5)]' : 'bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]';
                     @endphp
                     <div id="status_indicator"
@@ -199,7 +199,7 @@
                         @endif
 
                         <!-- Moderator Activity (Visible to Moderator/Admin owner) -->
-                        @if(($user->role === 'moderator' || $user->role === 'admin') && count($modFlags) > 0)
+                        @if(($user->role === 'moderator') && count($modFlags) > 0)
                             <div
                                 class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden group mt-8">
                                 <h3
@@ -369,70 +369,70 @@
             <!-- Manage Posts Section -->
             @if($isOwner)
                 <div x-show="tab === 'posts'" x-cloak class="animate-fade-in-up space-y-6" x-data="{ 
-                        posts: @js($user->posts->map(fn($p) => [
-                            'id' => $p->id,
-                            'category' => $p->category ?? 'Chat',
-                            'post' => $p->post,
-                            'created_at' => $p->created_at->toDateTimeString(),
-                            'updated_at' => $p->updated_at->toDateTimeString(),
-                            'diff' => $p->created_at->diffForHumans(),
-                            'updated_diff' => $p->updated_at->diffForHumans(),
-                            'is_updated' => $p->created_at != $p->updated_at,
-                            'images' => $p->images ?? []
-                        ])),
-                        sortBy: 'newest',
-                        editingId: null,
-                        editContent: '',
-                        get sortedPosts() {
-                            let sorted = [...this.posts];
-                            if (this.sortBy === 'newest') {
-                                return sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-                            } else if (this.sortBy === 'oldest') {
-                                return sorted.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-                            } else if (this.sortBy === 'type') {
-                                return sorted.sort((a, b) => a.category.localeCompare(b.category));
-                            }
-                            return sorted;
-                        },
-                        async savePost(id) {
-                            try {
-                                const res = await fetch('/update_post/' + id, {
-                                    method: 'POST',
-                                    headers: { 
-                                        'Content-Type': 'application/json',
-                                        'X-CSRF-TOKEN': '{{ csrf_token() }}' 
-                                    },
-                                    body: JSON.stringify({ post: this.editContent })
-                                });
-                                const data = await res.json();
-                                if (data.status === 'success') {
-                                    const idx = this.posts.findIndex(p => p.id === id);
-                                    this.posts[idx].post = data.post.post;
-                                    this.posts[idx].updated_at = data.post.updated_at;
-                                    this.posts[idx].updated_diff = 'just now';
-                                    this.posts[idx].is_updated = true;
-                                    this.editingId = null;
-                                } else {
-                                    alert(data.message);
+                                posts: @js($user->posts->map(fn($p) => [
+                                    'id' => $p->id,
+                                    'category' => $p->category ?? 'Chat',
+                                    'post' => $p->post,
+                                    'created_at' => $p->created_at->toDateTimeString(),
+                                    'updated_at' => $p->updated_at->toDateTimeString(),
+                                    'diff' => $p->created_at->diffForHumans(),
+                                    'updated_diff' => $p->updated_at->diffForHumans(),
+                                    'is_updated' => $p->created_at != $p->updated_at,
+                                    'images' => $p->images ?? []
+                                ])),
+                                sortBy: 'newest',
+                                editingId: null,
+                                editContent: '',
+                                get sortedPosts() {
+                                    let sorted = [...this.posts];
+                                    if (this.sortBy === 'newest') {
+                                        return sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                                    } else if (this.sortBy === 'oldest') {
+                                        return sorted.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                                    } else if (this.sortBy === 'type') {
+                                        return sorted.sort((a, b) => a.category.localeCompare(b.category));
+                                    }
+                                    return sorted;
+                                },
+                                async savePost(id) {
+                                    try {
+                                        const res = await fetch('/update_post/' + id, {
+                                            method: 'POST',
+                                            headers: { 
+                                                'Content-Type': 'application/json',
+                                                'X-CSRF-TOKEN': '{{ csrf_token() }}' 
+                                            },
+                                            body: JSON.stringify({ post: this.editContent })
+                                        });
+                                        const data = await res.json();
+                                        if (data.status === 'success') {
+                                            const idx = this.posts.findIndex(p => p.id === id);
+                                            this.posts[idx].post = data.post.post;
+                                            this.posts[idx].updated_at = data.post.updated_at;
+                                            this.posts[idx].updated_diff = 'just now';
+                                            this.posts[idx].is_updated = true;
+                                            this.editingId = null;
+                                        } else {
+                                            alert(data.message);
+                                        }
+                                    } catch (e) { alert('Error saving'); }
+                                },
+                                async deletePost(id) {
+                                    if (!confirm('Are you sure you want to PERMANENTLY delete this post? This cannot be undone.')) return;
+                                    try {
+                                        const res = await fetch('/delete_post/' + id, {
+                                            method: 'POST',
+                                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                                        });
+                                        const data = await res.json();
+                                        if (data.status === 'success') {
+                                            this.posts = this.posts.filter(p => p.id !== id);
+                                        } else {
+                                            alert(data.message);
+                                        }
+                                    } catch (e) { alert('Error deleting'); }
                                 }
-                            } catch (e) { alert('Error saving'); }
-                        },
-                        async deletePost(id) {
-                            if (!confirm('Are you sure you want to PERMANENTLY delete this post? This cannot be undone.')) return;
-                            try {
-                                const res = await fetch('/delete_post/' + id, {
-                                    method: 'POST',
-                                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
-                                });
-                                const data = await res.json();
-                                if (data.status === 'success') {
-                                    this.posts = this.posts.filter(p => p.id !== id);
-                                } else {
-                                    alert(data.message);
-                                }
-                            } catch (e) { alert('Error deleting'); }
-                        }
-                    }">
+                            }">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                         <h2 class="text-2xl font-black italic uppercase tracking-tighter text-pink-400">My Activity</h2>
                         <div class="flex items-center gap-3 bg-white/5 p-2 rounded-2xl border border-white/10">
