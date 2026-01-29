@@ -3,7 +3,94 @@
 @section('title', 'Fest Connection || User Profile')
 
 @section('content')
-<div class="relative min-h-screen py-24 bg-black text-white overflow-hidden" x-data="{ tab: 'info' }">
+<div x-data="{
+    tab: new URLSearchParams(window.location.search).get('tab') || 'info',
+    unreadCount: 0,
+    threads: [],
+    activeThreadId: null,
+    editingMsgId: null,
+    editContent: '',
+    async fetchThreads() {
+        try {
+            const res = await fetch('/get_messages');
+            const data = await res.json();
+            this.threads = Array.isArray(data) ? data : [];
+            this.unreadCount = this.threads.reduce((acc, t) => acc + (t.unread_count || 0), 0);
+        } catch (e) { 
+            console.error('Error fetching threads'); 
+            this.threads = [];
+        }
+    },
+    async sendReply(partnerId) {
+        const form = document.getElementById('reply_form_' + partnerId);
+        const formData = new FormData(form);
+        formData.append('receiver_id', partnerId);
+        
+        try {
+            const res = await fetch('/send_message', {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                const thread = this.threads.find(t => t.partner.id === partnerId);
+                if (thread) thread.messages.push(data.message);
+                form.reset();
+            }
+        } catch (e) { alert('Error sending reply'); }
+    },
+    async markRead(partnerId) {
+        try {
+            await fetch('/mark_read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ partner_id: partnerId })
+            });
+            this.fetchThreads();
+        } catch (e) {}
+    },
+    async saveEdit(id, partnerId) {
+        try {
+            const res = await fetch('/update_message/' + id, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ message: this.editContent })
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                const thread = this.threads.find(t => t.partner.id === partnerId);
+                if (thread) {
+                    const msg = thread.messages.find(m => m.id === id);
+                    if (msg) {
+                        msg.message = data.message.message;
+                        msg.is_edited = true;
+                        msg.updated_at = data.message.updated_at;
+                    }
+                }
+                this.editingMsgId = null;
+            }
+        } catch (e) { alert('Error saving edit'); }
+    },
+    async deleteMsg(id, partnerId) {
+        if (!confirm('Remove this message from your view?')) return;
+        try {
+            const res = await fetch('/delete_message/' + id, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                const thread = this.threads.find(t => t.partner.id === partnerId);
+                if (thread) thread.messages = thread.messages.filter(m => m.id !== id);
+            }
+        } catch (e) { alert('Error deleting'); }
+    },
+    init() {
+        this.fetchThreads();
+        setInterval(() => this.fetchThreads(), 10000);
+    }
+}" @refresh-threads.window="fetchThreads()" class="relative min-h-screen py-24 bg-black text-white overflow-hidden">
     <!-- Video Background -->
     <x-video-background source="img/video/profile_bg.mp4" />
 
@@ -77,10 +164,22 @@
                 </div>
 
                 <div class="flex-grow text-center md:text-left">
-                    <h1
-                        class="text-4xl md:text-6xl font-black italic uppercase tracking-tighter mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/40">
-                        {{ $user->name }}
-                    </h1>
+                    <div class="flex items-center justify-center md:justify-start gap-4 mb-2 group/user-main pt-6">
+                        <h1
+                            class="text-4xl md:text-6xl font-black italic uppercase tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/40">
+                            {{ $user->name }}
+                        </h1>
+                        @if(!$isOwner && $viewer)
+                            <button onclick="initiateMessage({{ $user->id }}, '{{ $user->name }}')"
+                                class="opacity-0 group-hover/user-main:opacity-100 transition-opacity p-2 bg-pink-600 hover:bg-pink-500 rounded-2xl text-white shadow-xl shadow-pink-600/20"
+                                title="Message {{ $user->name }}">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                </svg>
+                            </button>
+                        @endif
+                    </div>
                     <div
                         class="flex flex-wrap justify-center md:justify-start gap-4 text-sm font-bold uppercase tracking-widest text-gray-400">
                         <span class="flex items-center gap-2">
@@ -141,6 +240,14 @@
                             :class="tab === 'posts' ? 'bg-pink-600 text-white shadow-lg shadow-pink-500/20' : 'bg-white/5 text-gray-400 hover:bg-white/10'"
                             class="px-8 py-3 rounded-2xl font-black uppercase tracking-widest transition text-xs">My
                             Activity</button>
+                        <button @click="tab = 'messages'; fetchThreads()"
+                            :class="tab === 'messages' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-white/5 text-gray-400 hover:bg-white/10'"
+                            class="px-8 py-3 rounded-2xl font-black uppercase tracking-widest transition text-xs relative flex items-center gap-2">
+                            My Messages
+                            <span x-show="unreadCount > 0"
+                                class="flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] text-white animate-pulse"
+                                x-text="unreadCount"></span>
+                        </button>
                     @endif
                     <button @click="tab = 'penalties'"
                         :class="tab === 'penalties' ? 'bg-red-600 text-white shadow-lg shadow-red-500/20' : 'bg-white/5 text-gray-400 hover:bg-white/10'"
@@ -369,70 +476,70 @@
             <!-- Manage Posts Section -->
             @if($isOwner)
                 <div x-show="tab === 'posts'" x-cloak class="animate-fade-in-up space-y-6" x-data="{ 
-                                posts: @js($user->posts->map(fn($p) => [
-                                    'id' => $p->id,
-                                    'category' => $p->category ?? 'Chat',
-                                    'post' => $p->post,
-                                    'created_at' => $p->created_at->toDateTimeString(),
-                                    'updated_at' => $p->updated_at->toDateTimeString(),
-                                    'diff' => $p->created_at->diffForHumans(),
-                                    'updated_diff' => $p->updated_at->diffForHumans(),
-                                    'is_updated' => $p->created_at != $p->updated_at,
-                                    'images' => $p->images ?? []
-                                ])),
-                                sortBy: 'newest',
-                                editingId: null,
-                                editContent: '',
-                                get sortedPosts() {
-                                    let sorted = [...this.posts];
-                                    if (this.sortBy === 'newest') {
-                                        return sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-                                    } else if (this.sortBy === 'oldest') {
-                                        return sorted.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-                                    } else if (this.sortBy === 'type') {
-                                        return sorted.sort((a, b) => a.category.localeCompare(b.category));
-                                    }
-                                    return sorted;
-                                },
-                                async savePost(id) {
-                                    try {
-                                        const res = await fetch('/update_post/' + id, {
-                                            method: 'POST',
-                                            headers: { 
-                                                'Content-Type': 'application/json',
-                                                'X-CSRF-TOKEN': '{{ csrf_token() }}' 
-                                            },
-                                            body: JSON.stringify({ post: this.editContent })
-                                        });
-                                        const data = await res.json();
-                                        if (data.status === 'success') {
-                                            const idx = this.posts.findIndex(p => p.id === id);
-                                            this.posts[idx].post = data.post.post;
-                                            this.posts[idx].updated_at = data.post.updated_at;
-                                            this.posts[idx].updated_diff = 'just now';
-                                            this.posts[idx].is_updated = true;
-                                            this.editingId = null;
-                                        } else {
-                                            alert(data.message);
-                                        }
-                                    } catch (e) { alert('Error saving'); }
-                                },
-                                async deletePost(id) {
-                                    if (!confirm('Are you sure you want to PERMANENTLY delete this post? This cannot be undone.')) return;
-                                    try {
-                                        const res = await fetch('/delete_post/' + id, {
-                                            method: 'POST',
-                                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
-                                        });
-                                        const data = await res.json();
-                                        if (data.status === 'success') {
-                                            this.posts = this.posts.filter(p => p.id !== id);
-                                        } else {
-                                            alert(data.message);
-                                        }
-                                    } catch (e) { alert('Error deleting'); }
-                                }
-                            }">
+                                                                    posts: @js($user->posts->map(fn($p) => [
+                                                                        'id' => $p->id,
+                                                                        'category' => $p->category ?? 'Chat',
+                                                                        'post' => $p->post,
+                                                                        'created_at' => $p->created_at->toDateTimeString(),
+                                                                        'updated_at' => $p->updated_at->toDateTimeString(),
+                                                                        'diff' => $p->created_at->diffForHumans(),
+                                                                        'updated_diff' => $p->updated_at->diffForHumans(),
+                                                                        'is_updated' => $p->created_at != $p->updated_at,
+                                                                        'images' => $p->images ?? []
+                                                                    ])),
+                                                                    sortBy: 'newest',
+                                                                    editingId: null,
+                                                                    editContent: '',
+                                                                    get sortedPosts() {
+                                                                        let sorted = [...this.posts];
+                                                                        if (this.sortBy === 'newest') {
+                                                                            return sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                                                                        } else if (this.sortBy === 'oldest') {
+                                                                            return sorted.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                                                                        } else if (this.sortBy === 'type') {
+                                                                            return sorted.sort((a, b) => a.category.localeCompare(b.category));
+                                                                        }
+                                                                        return sorted;
+                                                                    },
+                                                                    async savePost(id) {
+                                                                        try {
+                                                                            const res = await fetch('/update_post/' + id, {
+                                                                                method: 'POST',
+                                                                                headers: { 
+                                                                                    'Content-Type': 'application/json',
+                                                                                    'X-CSRF-TOKEN': '{{ csrf_token() }}' 
+                                                                                },
+                                                                                body: JSON.stringify({ post: this.editContent })
+                                                                            });
+                                                                            const data = await res.json();
+                                                                            if (data.status === 'success') {
+                                                                                const idx = this.posts.findIndex(p => p.id === id);
+                                                                                this.posts[idx].post = data.post.post;
+                                                                                this.posts[idx].updated_at = data.post.updated_at;
+                                                                                this.posts[idx].updated_diff = 'just now';
+                                                                                this.posts[idx].is_updated = true;
+                                                                                this.editingId = null;
+                                                                            } else {
+                                                                                alert(data.message);
+                                                                            }
+                                                                        } catch (e) { alert('Error saving'); }
+                                                                    },
+                                                                    async deletePost(id) {
+                                                                        if (!confirm('Are you sure you want to PERMANENTLY delete this post? This cannot be undone.')) return;
+                                                                        try {
+                                                                            const res = await fetch('/delete_post/' + id, {
+                                                                                method: 'POST',
+                                                                                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                                                                            });
+                                                                            const data = await res.json();
+                                                                            if (data.status === 'success') {
+                                                                                this.posts = this.posts.filter(p => p.id !== id);
+                                                                            } else {
+                                                                                alert(data.message);
+                                                                            }
+                                                                        } catch (e) { alert('Error deleting'); }
+                                                                    }
+                                                                }">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                         <h2 class="text-2xl font-black italic uppercase tracking-tighter text-pink-400">My Activity</h2>
                         <div class="flex items-center gap-3 bg-white/5 p-2 rounded-2xl border border-white/10">
@@ -568,6 +675,206 @@
                     </div>
                 </div>
             @endif
+
+            <!-- My Messages Section -->
+            @if($isOwner)
+                <div x-show="tab === 'messages'" x-cloak class="animate-fade-in-up space-y-6">
+                    <div class="flex flex-col gap-6">
+                        <h2 class="text-2xl font-black italic uppercase tracking-tighter text-indigo-400">My
+                            Conversations</h2>
+
+                        <template x-if="threads.length === 0">
+                            <div class="bg-white/5 border border-white/10 rounded-3xl p-12 text-center">
+                                <p class="text-gray-500 uppercase tracking-widest font-bold">No messages yet.</p>
+                            </div>
+                        </template>
+
+                        <div class="grid grid-cols-1 gap-4">
+                            <template x-for="thread in threads" :key="thread.partner.id">
+                                <div class="bg-white/5 border border-white/10 rounded-3xl overflow-hidden transition-all duration-500"
+                                    :class="activeThreadId === thread.partner.id ? 'ring-2 ring-indigo-500/50 shadow-2xl shadow-indigo-500/10' : ''">
+
+                                    <!-- Thread Header -->
+                                    <div @click="activeThreadId = (activeThreadId === thread.partner.id ? null : thread.partner.id); if(activeThreadId) markRead(thread.partner.id)"
+                                        class="p-6 flex items-center justify-between cursor-pointer hover:bg-white/5 transition">
+                                        <div class="flex items-center gap-4">
+                                            <div class="relative">
+                                                <img :src="thread.partner.profile_image ? '/' + thread.partner.profile_image : 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + thread.partner.name"
+                                                    class="w-12 h-12 rounded-2xl object-cover border border-white/10">
+                                                <div class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-black"
+                                                    :class="thread.partner.last_seen_at && (new Date() - new Date(thread.partner.last_seen_at) < 120000) ? 'bg-green-500' : 'bg-red-500'">
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <h4 class="font-black italic uppercase tracking-tight text-white"
+                                                    x-text="thread.partner.name"></h4>
+                                                <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest truncate max-w-[200px]"
+                                                    x-text="thread.messages && thread.messages.length > 0 ? (thread.messages[thread.messages.length-1].message || 'Sent an image') : 'No messages'">
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-4">
+                                            <template x-if="thread.unread_count > 0">
+                                                <span
+                                                    class="bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded-full"
+                                                    x-text="thread.unread_count + ' NEW'"></span>
+                                            </template>
+                                            <svg class="w-5 h-5 text-gray-600 transition-transform duration-300"
+                                                :class="activeThreadId === thread.partner.id ? 'rotate-180' : ''"
+                                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                                    d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </div>
+                                    </div>
+
+                                    <!-- Chat Content -->
+                                    <div x-show="activeThreadId === thread.partner.id" x-collapse>
+                                        <div class="px-6 pb-6 space-y-6">
+                                            <div
+                                                class="max-h-[400px] overflow-y-auto pr-2 space-y-4 custom-scrollbar flex flex-col">
+                                                <template x-for="msg in thread.messages" :key="msg.id">
+                                                    <div :class="msg.sender_id === thread.partner.id ? 'self-start' : 'self-end' "
+                                                        class="max-w-[80%] group/msg relative">
+                                                        <div :class="msg.sender_id === thread.partner.id ? 'bg-white/5 rounded-2xl rounded-tl-none' : 'bg-indigo-600 rounded-2xl rounded-tr-none shadow-lg shadow-indigo-600/20' "
+                                                            class="p-4 border border-white/10">
+
+                                                            <!-- Images -->
+                                                            <template x-if="msg.images && msg.images.length > 0">
+                                                                <div class="grid grid-cols-2 gap-2 mb-3">
+                                                                    <template x-for="img in msg.images" :key="img">
+                                                                        <img :src="'/' + img"
+                                                                            class="w-full h-24 object-cover rounded-xl border border-white/10 cursor-pointer hover:scale-105 transition"
+                                                                            @click="window.open('/' + img, '_blank')">
+                                                                    </template>
+                                                                </div>
+                                                            </template>
+
+                                                            <!-- Message text -->
+                                                            <div x-show="editingMsgId !== msg.id">
+                                                                <p class="text-sm text-white leading-relaxed"
+                                                                    x-text="msg.message"></p>
+                                                                <template x-if="msg.is_edited">
+                                                                    <p class="text-[9px] text-white/40 italic mt-1"
+                                                                        x-text="'Modified ' + new Date(msg.updated_at).toLocaleString()">
+                                                                    </p>
+                                                                </template>
+                                                            </div>
+
+                                                            <!-- Edit Input -->
+                                                            <div x-show="editingMsgId === msg.id" class="space-y-2">
+                                                                <textarea x-model="editContent"
+                                                                    class="w-full bg-black/40 border border-white/20 rounded-xl p-2 text-sm text-white focus:outline-none focus:border-white transition"></textarea>
+                                                                <div class="flex gap-2">
+                                                                    <button @click="saveEdit(msg.id, thread.partner.id)"
+                                                                        class="text-[10px] bg-white text-black font-bold uppercase px-3 py-1 rounded-lg">Save</button>
+                                                                    <button @click="editingMsgId = null"
+                                                                        class="text-[10px] text-gray-400 font-bold uppercase px-3 py-1">Cancel</button>
+                                                                </div>
+                                                            </div>
+
+                                                            <!-- Controls (Own messages) -->
+                                                            <template
+                                                                x-if="msg.sender_id !== thread.partner.id && editingMsgId !== msg.id">
+                                                                <div
+                                                                    class="absolute -top-2 -left-2 flex gap-1 opacity-0 group-hover/msg:opacity-100 transition">
+                                                                    <button
+                                                                        @click="editingMsgId = msg.id; editContent = msg.message"
+                                                                        class="bg-black border border-white/20 p-1.5 rounded-lg text-white hover:bg-white hover:text-black transition">
+                                                                        <svg class="w-3 h-3" fill="none"
+                                                                            stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path
+                                                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                                                            </path>
+                                                                        </svg>
+                                                                    </button>
+                                                                    <button @click="deleteMsg(msg.id, thread.partner.id)"
+                                                                        class="bg-black border border-white/20 p-1.5 rounded-lg text-red-500 hover:bg-red-500 hover:text-white transition">
+                                                                        <svg class="w-3 h-3" fill="none"
+                                                                            stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path
+                                                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                                                            </path>
+                                                                        </svg>
+                                                                    </button>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                        <span class="text-[8px] text-gray-600 mt-1 block"
+                                                            x-text="new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) "></span>
+                                                    </div>
+                                                </template>
+                                            </div>
+
+                                            <!-- Reply Form -->
+                                            <form :id="'reply_form_' + thread.partner.id"
+                                                @submit.prevent="sendReply(thread.partner.id)" class="relative">
+                                                <textarea name="message" required
+                                                    class="w-full bg-black/40 border border-white/10 rounded-2xl p-4 pr-32 text-gray-200 focus:outline-none focus:border-indigo-500 transition resize-none text-sm"
+                                                    placeholder="Type a reply..."></textarea>
+                                                <div class="absolute right-2 bottom-2 flex items-center gap-2">
+                                                    <label
+                                                        class="cursor-pointer p-2 hover:bg-white/5 rounded-xl transition text-gray-500 hover:text-indigo-400">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                                            viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                                            </path>
+                                                        </svg>
+                                                        <input type="file" name="optConnectImg[]" multiple class="hidden"
+                                                            accept="image/*">
+                                                    </label>
+                                                    <button type="submit"
+                                                        class="bg-indigo-600 hover:bg-indigo-500 text-white font-black uppercase tracking-widest px-4 py-2 rounded-xl text-[10px] transition shadow-lg">Send</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            <!-- Initiation Modal -->
+            <div id="private_message_modal"
+                class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+                <div
+                    class="bg-gray-900 border border-white/10 rounded-3xl w-full max-w-lg p-8 shadow-2xl animate-fade-in-up">
+                    <h2 class="text-2xl font-bold mb-6 text-pink-400 italic uppercase">Message <span
+                            id="msg_target_name">User</span></h2>
+                    <form id="private_message_form" class="space-y-6">
+                        @csrf
+                        <input type="hidden" name="receiver_id" id="msg_receiver_id">
+
+                        <div>
+                            <label
+                                class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Message</label>
+                            <textarea name="message" rows="4" required
+                                class="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-gray-200 focus:outline-none focus:border-pink-500 transition resize-none"
+                                placeholder="Write your message..."></textarea>
+                        </div>
+
+                        <div>
+                            <label
+                                class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Attach
+                                Images (Optional)</label>
+                            <input type="file" name="optConnectImg[]" multiple accept="image/*"
+                                class="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-pink-600 file:text-white hover:file:bg-pink-500 transition">
+                        </div>
+
+                        <div class="flex gap-4">
+                            <button type="submit"
+                                class="flex-1 bg-pink-600 hover:bg-pink-500 py-4 rounded-2xl font-black uppercase tracking-widest transition text-sm shadow-xl">Send
+                                Message</button>
+                            <button type="button" onclick="closeMessageModal()"
+                                class="px-8 bg-white/5 hover:bg-white/10 py-4 rounded-2xl font-bold uppercase tracking-widest transition text-gray-400 text-sm">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
 
         <script>
@@ -670,9 +977,56 @@
                         } catch (e) { }
                     };
                     updatePresence();
-                    setInterval(updatePresence, 20000);
+                    setInterval(updatePresence, 30000);
                 @endif
-    });
+
+                // --- Messaging Logic ---
+                window.initiateMessage = (userId, userName) => {
+                    document.getElementById('msg_receiver_id').value = userId;
+                    document.getElementById('msg_target_name').innerText = userName;
+                    document.getElementById('private_message_modal').classList.remove('hidden');
+                };
+
+                window.closeMessageModal = () => {
+                    document.getElementById('private_message_modal').classList.add('hidden');
+                    document.getElementById('private_message_form').reset();
+                };
+
+                document.getElementById('private_message_form')?.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const form = e.target;
+                    const btn = form.querySelector('button[type="submit"]');
+                    btn.disabled = true;
+                    btn.innerText = "SENDING...";
+
+                    const formData = new FormData(form);
+
+                    try {
+                        const res = await fetch('/send_message', {
+                            method: 'POST',
+                            body: formData,
+                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                        });
+                        const data = await res.json();
+                        if (data.status === 'success') {
+                            alert('Message sent successfully!');
+                            closeMessageModal();
+                            @if($isOwner)
+                                // Dispatch event to Alpine correctly
+                                window.dispatchEvent(new CustomEvent('refresh-threads'));
+                            @endif
+                        } else {
+                            alert(data.message || 'Failed to send message.');
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        alert("Error sending message.");
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerText = "SEND MESSAGE";
+                    }
+                });
+            });
         </script>
 
         <!-- Flag Modal (Admin Only) -->

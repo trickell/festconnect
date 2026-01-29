@@ -48,6 +48,13 @@ Route::post('/login', $C_NAMESPACE . 'UserController@login');
 Route::post('/register', $C_NAMESPACE . 'UserController@create');
 Route::post('/update_presence', $C_NAMESPACE . 'UserController@update_presence');
 
+// Messaging Routes
+Route::post('/send_message', $C_NAMESPACE . 'MessageController@sendMessage');
+Route::get('/get_messages', $C_NAMESPACE . 'MessageController@getThreads');
+Route::post('/update_message/{id}', $C_NAMESPACE . 'MessageController@updateMessage');
+Route::post('/delete_message/{id}', $C_NAMESPACE . 'MessageController@deleteMessage');
+Route::post('/mark_read', $C_NAMESPACE . 'MessageController@markAsRead');
+
 // Routes for retrieving and submitting posts and comments
 Route::get('/get_posts', $C_NAMESPACE . 'PostsController@get_posts');
 Route::get('/get_comments/{postId}', $C_NAMESPACE . 'PostsController@get_comments');

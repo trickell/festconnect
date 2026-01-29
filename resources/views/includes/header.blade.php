@@ -204,32 +204,48 @@
 
                 list.innerHTML = notifications.map(n => {
                     const data = n.data || {};
-                    const actor = data.tagged_by || data.reply_by || data.comment_by || 'System';
-                    const msg = data.message || 'New activity detected';
-                    const icon = n.type === 'moderation_action' ? '⚠️' : '🔔';
+                    let actor = 'System';
+                    let msg = 'New activity detected';
+                    let icon = '🔔';
+
+                    if (n.type === 'message') {
+                        actor = data.sender_name || 'Someone';
+                        msg = `messaged you: "${data.message_snippet}"`;
+                        icon = '💬';
+                    } else if (n.type === 'moderation_action') {
+                        actor = 'Moderator';
+                        msg = data.message || 'Action taken on your account';
+                        icon = '⚠️';
+                    } else {
+                        actor = data.tagged_by || data.reply_by || data.comment_by || 'System';
+                        msg = data.message || 'New activity detected';
+                    }
 
                     return `
-                            <div class="px-4 py-4 hover:bg-white/5 border-b border-white/5 transition cursor-pointer group" onclick="handleNotifClick(${JSON.stringify(data).replace(/"/g, '&quot;')})">
-                                <div class="flex gap-3 items-start">
-                                    <span class="text-sm mt-0.5">${icon}</span>
-                                    <div class="flex-grow">
-                                        <p class="text-[11px] text-gray-200 leading-snug">
-                                            <span class="font-black text-purple-400 uppercase tracking-tighter">${actor}</span> 
-                                            ${msg}
-                                        </p>
-                                        <span class="text-[8px] text-gray-500 italic mt-1 block uppercase font-black tracking-[0.1em] opacity-60">
-                                            ${new Date(n.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })} @ ${new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
+                                        <div class="px-4 py-4 hover:bg-white/5 border-b border-white/5 transition cursor-pointer group" onclick="handleNotifClick(${JSON.stringify(data).replace(/"/g, '&quot;')})">
+                                            <div class="flex gap-3 items-start">
+                                                <span class="text-sm mt-0.5">${icon}</span>
+                                                <div class="flex-grow">
+                                                    <p class="text-[11px] text-gray-200 leading-snug">
+                                                        <span class="font-black text-purple-400 uppercase tracking-tighter">${actor}</span> 
+                                                        ${msg}
+                                                    </p>
+                                                    <span class="text-[8px] text-gray-500 italic mt-1 block uppercase font-black tracking-[0.1em] opacity-60">
+                                                        ${new Date(n.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })} @ ${new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `;
                 }).join('');
             };
 
             window.handleNotifClick = (data) => {
                 if (data.post_id) {
                     window.location.href = `/share_zone?post=${data.post_id}`;
+                } else if (data.message_id) {
+                    const userName = "{{ is_object(session('user')) ? session('user')->getAttribute('name') : (session('user')['name'] ?? '') }}";
+                    window.location.href = `/profile/${encodeURIComponent(userName)}?tab=messages`;
                 }
             };
 

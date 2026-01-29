@@ -221,6 +221,41 @@
     </div>
 </div>
 
+<!-- Private Message Modal -->
+<div id="private_message_modal"
+    class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+    <div class="bg-gray-900 border border-white/10 rounded-3xl w-full max-w-lg p-8 shadow-2xl animate-fade-in-up">
+        <h2 class="text-2xl font-bold mb-6 text-pink-400 italic uppercase">Message <span
+                id="msg_target_name">User</span></h2>
+        <form id="private_message_form" class="space-y-6">
+            @csrf
+            <input type="hidden" name="receiver_id" id="msg_receiver_id">
+
+            <div>
+                <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Message</label>
+                <textarea name="message" rows="4" required
+                    class="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-gray-200 focus:outline-none focus:border-pink-500 transition resize-none"
+                    placeholder="Write your message..."></textarea>
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Attach Images
+                    (Optional)</label>
+                <input type="file" name="optConnectImg[]" multiple accept="image/*"
+                    class="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-pink-600 file:text-white hover:file:bg-pink-500 transition">
+            </div>
+
+            <div class="flex gap-4">
+                <button type="submit"
+                    class="flex-1 bg-pink-600 hover:bg-pink-500 py-4 rounded-2xl font-black uppercase tracking-widest transition text-sm shadow-xl">Send
+                    Message</button>
+                <button type="button" onclick="closeMessageModal()"
+                    class="px-8 bg-white/5 hover:bg-white/10 py-4 rounded-2xl font-bold uppercase tracking-widest transition text-gray-400 text-sm">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Lightbox Modal -->
 <div id="image_lightbox"
     class="fixed inset-0 z-[9999] hidden flex items-center justify-center bg-black/90 backdrop-blur-md animate-fade-in cursor-pointer">
@@ -528,13 +563,24 @@
                         ${imagesHtml}
                         <div class="flex items-center justify-between pt-4 mt-4 border-t border-white/5">
                             <div class="flex flex-col">
-                                <a href="/profile/${post.user ? post.user.name : ''}" 
-                                class="text-[11px] font-bold ${(post.user.role === 'moderator' || post.user.role === 'admin') ? 'text-purple-500' : 'text-gray-400'} 
-                                uppercase tracking-wider hover:text-white transition">
-                                ${post.user ? post.user.name : 'Unknown'}
-                                ${post.user.role === 'moderator' ? ' (Moderator)' : ''}
-                                ${post.user.role === 'admin' ? ' (Admin)' : ''}
-                                </a>
+                                <div class="flex items-center gap-2 group/user relative">
+                                    <a href="/profile/${post.user ? post.user.name : ''}" 
+                                    class="text-[11px] font-bold ${(post.user.role === 'moderator' || post.user.role === 'admin') ? 'text-purple-500' : 'text-gray-400'} 
+                                    uppercase tracking-wider hover:text-white transition">
+                                    ${post.user ? post.user.name : 'Unknown'}
+                                    ${post.user.role === 'moderator' ? ' (Moderator)' : ''}
+                                    ${post.user.role === 'admin' ? ' (Admin)' : ''}
+                                    </a>
+                                    ${post.user_id !== currentUserId ? `
+                                        <button onclick="initiateMessage(${post.user_id}, '${post.user ? post.user.name : 'User'}')" 
+                                            class="opacity-0 group-hover/user:opacity-100 transition-opacity p-1 hover:bg-white/10 rounded text-pink-500" 
+                                            title="Message ${post.user ? post.user.name : 'User'}">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                            </svg>
+                                        </button>
+                                    ` : ''}
+                                </div>
                                 ${replyingTo}
                             </div>
                             <span class="text-[10px] text-gray-600 font-mono italic">${new Date(post.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
@@ -745,6 +791,49 @@
         setInterval(() => {
             if (currentPage === 1) fetchPosts(); // Only auto-poll on page 1
         }, 5000);
+
+        // --- Messaging Logic ---
+        window.initiateMessage = (userId, userName) => {
+            document.getElementById('msg_receiver_id').value = userId;
+            document.getElementById('msg_target_name').innerText = userName;
+            document.getElementById('private_message_modal').classList.remove('hidden');
+        };
+
+        window.closeMessageModal = () => {
+            document.getElementById('private_message_modal').classList.add('hidden');
+            document.getElementById('private_message_form').reset();
+        };
+
+        document.getElementById('private_message_form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const btn = form.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerText = "SENDING...";
+
+            const formData = new FormData(form);
+
+            try {
+                const res = await fetch('/send_message', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alert('Message sent successfully!');
+                    closeMessageModal();
+                } else {
+                    alert(data.message || 'Failed to send message.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Error sending message.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "SEND MESSAGE";
+            }
+        });
     });
 </script>
 
