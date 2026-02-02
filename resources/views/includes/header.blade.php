@@ -113,7 +113,7 @@
     <div x-show="mobileMenuOpen" x-transition:enter="transition ease-out duration-300"
         x-transition:enter-start="opacity-0 -translate-y-full" x-transition:enter-end="opacity-100 translate-y-0"
         x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0"
-        x-transition:leave-end="opacity-0 -translate-y-full" x-cloak
+        x-transition:leave-end="opacity-0 -translate-y-full" x-cloak style="display: none;"
         class="md:hidden absolute top-full left-0 w-full bg-violet-950/95 backdrop-blur-xl border-b border-white/10 shadow-2xl z-40 overflow-hidden">
         <ul class="flex flex-col p-6 space-y-4">
             <li>
@@ -222,21 +222,21 @@
                     }
 
                     return `
-                                        <div class="px-4 py-4 hover:bg-white/5 border-b border-white/5 transition cursor-pointer group" onclick="handleNotifClick(${JSON.stringify(data).replace(/"/g, '&quot;')})">
-                                            <div class="flex gap-3 items-start">
-                                                <span class="text-sm mt-0.5">${icon}</span>
-                                                <div class="flex-grow">
-                                                    <p class="text-[11px] text-gray-200 leading-snug">
-                                                        <span class="font-black text-purple-400 uppercase tracking-tighter">${actor}</span> 
-                                                        ${msg}
-                                                    </p>
-                                                    <span class="text-[8px] text-gray-500 italic mt-1 block uppercase font-black tracking-[0.1em] opacity-60">
-                                                        ${new Date(n.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })} @ ${new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                    </span>
+                                            <div class="px-4 py-4 hover:bg-white/5 border-b border-white/5 transition cursor-pointer group" onclick="handleNotifClick(${JSON.stringify(data).replace(/"/g, '&quot;')})">
+                                                <div class="flex gap-3 items-start">
+                                                    <span class="text-sm mt-0.5">${icon}</span>
+                                                    <div class="flex-grow">
+                                                        <p class="text-[11px] text-gray-200 leading-snug">
+                                                            <span class="font-black text-purple-400 uppercase tracking-tighter">${actor}</span> 
+                                                            ${msg}
+                                                        </p>
+                                                        <span class="text-[8px] text-gray-500 italic mt-1 block uppercase font-black tracking-[0.1em] opacity-60">
+                                                            ${new Date(n.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })} @ ${new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    `;
+                                        `;
                 }).join('');
             };
 
