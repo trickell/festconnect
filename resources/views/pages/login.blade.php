@@ -93,11 +93,11 @@
             <div class="mt-8 pt-6 border-t border-white/10 text-center">
                 <p class="text-gray-400 text-sm">Or continue with</p>
                 <div class="flex justify-center space-x-4 mt-4">
-                    <a href="#"
+                    <!-- <a href="#"
                         class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition">
                         <i class="fab fa-facebook-f"></i>
-                    </a>
-                    <a href="#"
+                    </a> -->
+                    <a href="/auth/google"
                         class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition">
                         <i class="fab fa-google"></i>
                     </a>
