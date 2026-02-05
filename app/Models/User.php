@@ -28,7 +28,11 @@ class User extends Authenticatable
         'genres',
         'last_seen_at',
         'penalty_marks',
-        'banned_until'
+        'banned_until',
+        'google_id',
+        'google_token',
+        'google_refresh_token',
+        'facebook_id'
     ];
 
     /**

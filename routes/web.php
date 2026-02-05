@@ -109,6 +109,13 @@ Route::post('/admin/users/delete/{id}', $C_NAMESPACE . 'ModerationController@del
 Route::get('/admin/flags', $C_NAMESPACE . 'ModerationController@get_all_flags');
 Route::post('/admin/flags/{id}/resolve', $C_NAMESPACE . 'ModerationController@resolve_flag');
 
+// Google Auth Routes
+Route::get('/auth/google', [App\Http\Controllers\SocialAuthController::class, 'redirectToGoogle']);
+Route::get('/auth/google/callback', [App\Http\Controllers\SocialAuthController::class, 'handleGoogleCallback']);
+
+// Facebook Auth Routes (SDK)
+Route::post('/auth/facebook/login', [App\Http\Controllers\SocialAuthController::class, 'handleFacebookLogin']);
+
 // Route::get('/create_comment', function(){
 //     try {
 //         $user = new \App\Models\Comments();

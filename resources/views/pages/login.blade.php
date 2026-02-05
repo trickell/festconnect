@@ -93,11 +93,11 @@
             <div class="mt-8 pt-6 border-t border-white/10 text-center">
                 <p class="text-gray-400 text-sm">Or continue with</p>
                 <div class="flex justify-center space-x-4 mt-4">
-                    <a href="#"
+                    <a href="javascript:void(0)" onclick="fbLogin()"
                         class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition">
                         <i class="fab fa-facebook-f"></i>
                     </a>
-                    <a href="#"
+                    <a href="/auth/google"
                         class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition">
                         <i class="fab fa-google"></i>
                     </a>
@@ -106,6 +106,57 @@
         </div>
     </div>
 </div>
+
+<div id="fb-root"></div>
+<script>
+    window.fbAsyncInit = function () {
+        FB.init({
+            appId: '{{ env("FACEBOOK_APP_ID") }}',
+            cookie: true,
+            xfbml: true,
+            version: 'v18.0'
+        });
+        FB.AppEvents.logPageView();
+    };
+
+    (function (d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) { return; }
+        js = d.createElement(s); js.id = id;
+        js.src = "https://connect.facebook.net/en_US/sdk.js";
+        fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));
+
+    function fbLogin() {
+        FB.login(function (response) {
+            if (response.authResponse) {
+                FB.api('/me', { fields: 'name,email,picture' }, function (userData) {
+                    $.ajax({
+                        url: '/auth/facebook/login',
+                        type: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        data: {
+                            id: userData.id,
+                            name: userData.name,
+                            email: userData.email,
+                            picture: userData.picture.data.url
+                        },
+                        success: function (res) {
+                            if (res.status === 'success') {
+                                window.location.href = res.redirect;
+                            }
+                        },
+                        error: function (err) {
+                            console.error('FB Login Error:', err);
+                        }
+                    });
+                });
+            }
+        }, { scope: 'email,public_profile' });
+    }
+</script>
 
 <script>
     // Inline script for toggle logic since we removed the complicated sliding login.js logic dependence
@@ -134,4 +185,5 @@
         });
     });
 </script>
+
 @stop
