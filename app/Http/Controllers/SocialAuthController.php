@@ -55,4 +55,38 @@ class SocialAuthController extends Controller
             return redirect('/login')->with('error', 'Google authentication failed.');
         }
     }
+
+    public function handleFacebookLogin(Request $request)
+    {
+        try {
+            $fbUser = $request->all();
+
+            $user = User::where('facebook_id', $fbUser['id'])
+                ->orWhere('email', $fbUser['email'])
+                ->first();
+
+            if ($user) {
+                if (!$user->facebook_id) {
+                    $user->update([
+                        'facebook_id' => $fbUser['id'],
+                    ]);
+                }
+            } else {
+                $user = User::create([
+                    'name' => $fbUser['name'],
+                    'email' => $fbUser['email'],
+                    'password' => Hash::make(Str::random(24)),
+                    'facebook_id' => $fbUser['id'],
+                    'role' => 'user',
+                ]);
+            }
+
+            session(['user' => $user]);
+
+            return response()->json(['status' => 'success', 'redirect' => '/reconnections']);
+
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
 }

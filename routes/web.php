@@ -113,6 +113,9 @@ Route::post('/admin/flags/{id}/resolve', $C_NAMESPACE . 'ModerationController@re
 Route::get('/auth/google', [App\Http\Controllers\SocialAuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [App\Http\Controllers\SocialAuthController::class, 'handleGoogleCallback']);
 
+// Facebook Auth Routes (SDK)
+Route::post('/auth/facebook/login', [App\Http\Controllers\SocialAuthController::class, 'handleFacebookLogin']);
+
 // Route::get('/create_comment', function(){
 //     try {
 //         $user = new \App\Models\Comments();
