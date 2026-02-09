@@ -66,6 +66,138 @@
             </a>
 
         </div>
+
+        <!-- Beta Invite System -->
+        <div id="beta-invite-section" x-data="betaInviteForm()"
+            class="mt-16 w-full max-w-xl transition-all duration-700"
+            :class="highlight ? 'scale-105 ring-4 ring-purple-300 ring-offset-8 ring-offset-black rounded-3xl animate-pulse-glow' : ''">
+
+            <div
+                class="bg-white/5 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-2xl relative overflow-hidden">
+                <!-- Background Glow -->
+                <div class="absolute -top-24 -right-24 w-48 h-48 bg-purple-600/20 blur-3xl rounded-full"></div>
+                <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-pink-600/20 blur-3xl rounded-full"></div>
+
+                <div class="relative z-10 text-center space-y-6">
+                    <div>
+                        <h2 class="text-3xl font-black italic uppercase tracking-tighter text-white">Get Early Access
+                        </h2>
+                        <p class="text-gray-400 text-sm font-medium mt-1">We're currently in invite-only beta. Sign up
+                            to receive your code!</p>
+                    </div>
+
+                    <form @submit.prevent="submitInvite" class="space-y-4">
+                        <div class="relative">
+                            <input type="email" x-model="email" required
+                                class="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition shadow-inner"
+                                placeholder="Enter your email address" />
+                            <button type="submit" :disabled="loading"
+                                class="absolute right-2 top-2 bottom-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-6 rounded-xl font-bold uppercase tracking-widest transition shadow-lg disabled:opacity-50">
+                                <span x-show="!loading">Get Invited</span>
+                                <span x-show="loading" class="flex items-center gap-2">
+                                    <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                            stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                        </path>
+                                    </svg>
+                                </span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <div x-show="message" :class="status === 'success' ? 'text-green-400' : 'text-red-400'"
+                        class="text-xs font-bold uppercase tracking-widest animate-fade-in" x-text="message" x-cloak>
+                    </div>
+                </div>
+            </div>
+
+            <div class="m-4 text-center">
+                <a href="{{ url('/invitecode') }}"
+                    class="text-gray-500 hover:text-purple-400 text-[10px] font-black uppercase tracking-[0.3em] transition p10">Already
+                    have a code? Register here</a>
+            </div>
+        </div>
     </div>
 </div>
+
+<script>
+    function betaInviteForm() {
+        return {
+            email: '',
+            loading: false,
+            message: '',
+            status: '',
+            highlight: new URLSearchParams(window.location.search).has('highlight'),
+            init() {
+                if (this.highlight) {
+                    setTimeout(() => {
+                        const el = document.getElementById('beta-invite-section');
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 500);
+                }
+            },
+            async submitInvite() {
+                this.loading = true;
+                this.message = '';
+                try {
+                    const res = await fetch('/request_beta', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({ email: this.email })
+                    });
+                    const data = await res.json();
+                    this.status = data.status;
+                    this.message = data.message;
+                    if (data.status === 'success') this.email = '';
+                } catch (e) {
+                    this.status = 'error';
+                    this.message = 'Something went wrong. Please try again.';
+                } finally {
+                    this.loading = false;
+                }
+            }
+        }
+    }
+</script>
+
+<style>
+    @keyframes pulse-glow {
+
+        0%,
+        100% {
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
+        }
+
+        50% {
+            box-shadow: 0 0 60px rgba(188, 116, 255, 1);
+        }
+    }
+
+    .animate-pulse-glow {
+        animation: pulse-glow 2s infinite;
+    }
+
+    .animate-spin {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+</style>
 @stop
