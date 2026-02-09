@@ -157,6 +157,30 @@ class ModerationController extends BaseController
         return response()->json(['status' => 'success', 'message' => 'Flag resolved.']);
     }
 
+    public function toggleRegistration(Request $request)
+    {
+        $this->authorizeAdmin();
+        $request->validate(['enabled' => 'required|boolean']);
+
+        \App\Models\Setting::set('registration_enabled', $request->enabled ? '1' : '0');
+
+        return response()->json(['status' => 'success', 'message' => 'Registration ' . ($request->enabled ? 'enabled' : 'disabled')]);
+    }
+
+    public function generateMoreInvites()
+    {
+        $this->authorizeAdmin();
+
+        for ($i = 0; $i < 10; $i++) {
+            \App\Models\BetaInvite::create([
+                'code' => strtoupper(\Illuminate\Support\Str::random(10)),
+                'is_active' => false,
+            ]);
+        }
+
+        return response()->json(['status' => 'success', 'message' => '10 more invite codes generated.']);
+    }
+
     // --- Helpers ---
 
     private function authorizeAdmin()

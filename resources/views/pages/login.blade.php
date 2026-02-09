@@ -11,12 +11,16 @@
     <div class="relative z-10 w-full max-w-md px-4">
 
         <!-- Toggle Buttons -->
-        <div class="flex mb-6 bg-white/10 p-1 rounded-full backdrop-blur-md">
+        @php
+            $regEnabled = \App\Models\Setting::get('registration_enabled', '1') === '1';
+        @endphp
+        <div class="flex mb-6 bg-white/10 p-1 rounded-full backdrop-blur-md"
+            x-data="{ regEnabled: {{ $regEnabled ? 'true' : 'false' }} }">
             <button id="show-signin"
                 class="flex-1 py-2 rounded-full text-white font-semibold text-sm transition-all bg-purple-600 shadow-lg">
                 Sign In
             </button>
-            <button id="show-signup"
+            <button id="show-signup" @click="if(!regEnabled) window.location.href = '/?highlight=1'"
                 class="flex-1 py-2 rounded-full text-white font-semibold text-sm transition-all hover:bg-white/10">
                 Sign Up
             </button>

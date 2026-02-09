@@ -116,6 +116,14 @@ Route::get('/auth/google/callback', [App\Http\Controllers\SocialAuthController::
 // Facebook Auth Routes (SDK)
 Route::post('/auth/facebook/login', [App\Http\Controllers\SocialAuthController::class, 'handleFacebookLogin']);
 
+// Beta Invite Routes
+Route::post('/request_beta', [App\Http\Controllers\BetaInviteController::class, 'requestInvite']);
+Route::get('/invitecode', [App\Http\Controllers\BetaInviteController::class, 'showInvitePage']);
+Route::post('/verify_code', [App\Http\Controllers\BetaInviteController::class, 'verifyCode']);
+Route::post('/register_beta', [App\Http\Controllers\BetaInviteController::class, 'register']);
+Route::post('/admin/toggle_registration', [App\Http\Controllers\ModerationController::class, 'toggleRegistration']);
+Route::post('/admin/generate_invites', [App\Http\Controllers\ModerationController::class, 'generateMoreInvites']);
+
 // Route::get('/create_comment', function(){
 //     try {
 //         $user = new \App\Models\Comments();

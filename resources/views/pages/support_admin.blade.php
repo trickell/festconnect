@@ -3,7 +3,7 @@
 @section('title', 'Admin Dashboard || Management')
 
 @section('content')
-<div class="relative min-h-screen py-24 bg-black text-white overflow-hidden" x-data="{ tab: 'tickets' }">
+<div class="relative min-h-screen py-24 bg-black text-white overflow-hidden" x-data="adminDashboard">
     <!-- Background Decor -->
     <!-- Video Background -->
     <x-video-background source="img/video/admin2_bg.mp4" />
@@ -43,6 +43,10 @@
                 :class="tab === 'flags' ? 'bg-pink-600 text-white shadow-lg shadow-pink-500/20' : 'bg-white/5 text-gray-400 hover:bg-white/10'"
                 class="px-8 py-3 rounded-2xl font-black uppercase tracking-widest transition text-xs">Moderator
                 Flags</button>
+            <button @click="tab = 'settings'"
+                :class="tab === 'settings' ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/20' : 'bg-white/5 text-gray-400 hover:bg-white/10'"
+                class="px-8 py-3 rounded-2xl font-black uppercase tracking-widest transition text-xs">Platform
+                Settings</button>
         </div>
 
         <!-- Tab Content: Support Tickets -->
@@ -55,7 +59,7 @@
                             <div class="flex items-center gap-4 flex-wrap">
                                 <span
                                     class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest 
-                                                        {{ $ticket->status === 'open' ? 'bg-green-500/20 text-green-400' : ($ticket->status === 'resolved' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-400') }}">
+                                                                        {{ $ticket->status === 'open' ? 'bg-green-500/20 text-green-400' : ($ticket->status === 'resolved' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-400') }}">
                                     {{ $ticket->status }}
                                 </span>
                                 <span
@@ -140,6 +144,59 @@
             </div>
             <div class="space-y-6" id="flags_container">
                 <!-- Loaded via JS -->
+            </div>
+        </div>
+
+        <!-- Tab Content: Platform Settings -->
+        <div x-show="tab === 'settings'" class="space-y-8 animate-fade-in-up" x-cloak>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Registration Control -->
+                <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
+                    <h2 class="text-2xl font-bold text-orange-400 mb-2">Beta Controls</h2>
+                    <p class="text-gray-500 text-xs uppercase tracking-widest mb-6">Manage user registration and invites
+                    </p>
+
+                    <div class="space-y-6">
+                        <div
+                            class="flex items-center justify-between p-4 bg-black/40 border border-white/5 rounded-2xl">
+                            <div>
+                                <h3 class="text-white font-bold">Public Registration</h3>
+                                <p class="text-gray-500 text-[10px] uppercase">Allow anyone to sign up without code</p>
+                            </div>
+                            <button @click="toggleRegistration()" :class="regEnabled ? 'bg-green-600' : 'bg-red-600'"
+                                class="w-16 h-8 rounded-full relative transition-colors duration-300">
+                                <div :class="regEnabled ? 'translate-x-8' : 'translate-x-1'"
+                                    class="absolute top-1 w-6 h-6 bg-white rounded-full transition-transform duration-300">
+                                </div>
+                            </button>
+                        </div>
+
+                        <div class="p-6 bg-orange-600/10 border border-orange-500/20 rounded-2xl">
+                            <h3 class="text-white font-bold mb-2">Invite Generation</h3>
+                            <p class="text-gray-400 text-xs mb-4">Quickly add 10 new randomly generated beta invite
+                                codes to the pool.</p>
+                            <button @click="generateInvites()" :disabled="generating"
+                                class="w-full bg-orange-600 hover:bg-orange-500 text-white py-3 rounded-xl font-black uppercase tracking-widest transition shadow-lg disabled:opacity-50">
+                                <span x-show="!generating">Generate 10 More Codes</span>
+                                <span x-show="generating">Generating...</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Future Settings Placeholder -->
+                <div
+                    class="bg-white/5 backdrop-blur-xl border border-white/10 border-dashed rounded-3xl p-8 flex flex-col items-center justify-center text-center opacity-30">
+                    <svg class="w-12 h-12 text-gray-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                        </path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    <span class="text-[10px] font-black uppercase tracking-widest text-gray-500">More Settings Coming
+                        Soon</span>
+                </div>
             </div>
         </div>
     </div>
@@ -235,6 +292,60 @@
 </div>
 
 <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<script>
+    function platformSettings() {
+        return {
+            regEnabled: {{ \App\Models\Setting::get('registration_enabled', '1') === '1' ? 'true' : 'false' }},
+            generating: false,
+            async toggleRegistration() {
+                const newState = !this.regEnabled;
+                try {
+                    const res = await fetch('/admin/toggle_registration', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({ enabled: newState ? 1 : 0 })
+                    });
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        this.regEnabled = newState;
+                    } else {
+                        alert(data.message);
+                    }
+                } catch (e) {
+                    alert('Error toggling registration');
+                }
+            },
+            async generateInvites() {
+                this.generating = true;
+                try {
+                    const res = await fetch('/admin/generate_invites', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
+                    });
+                    const data = await res.json();
+                    alert(data.message);
+                } catch (e) {
+                    alert('Error generating invites');
+                } finally {
+                    this.generating = false;
+                }
+            }
+        }
+    }
+
+    // Wrap the existing x-data logic to include our new settings state
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('adminDashboard', () => ({
+            tab: 'tickets',
+            ...platformSettings()
+        }));
+    });
+</script>
 <script>
     // --- User Management ---
     async function loadUsers() {
