@@ -11,11 +11,15 @@
     <div class="relative z-10 container mx-auto px-4 py-16 flex flex-col items-center">
 
         <!-- Logo Section -->
-        <div class="mb-12 text-center group">
+        <div class="mb-12 text-center group static relative">
             <img src="{{ asset('/img/festconnection_logo.png') }}" alt="Fest Connection Logo"
                 class="md:w-88 h-auto mx-auto drop-shadow-2xl transition-transform duration-300 group-hover:scale-105 group-hover:hidden">
             <img src="{{ asset('/img/festconnection_logo_hover.png') }}" alt="Fest Connection Logo Hover"
                 class="md:w-88 h-auto mx-auto drop-shadow-2xl transition-transform duration-300 group-hover:scale-105 hidden group-hover:block">
+            <h2
+                class="absolute inset-x-4 -inset-y-4 text-6xl font-black text-orange-500 text-shadow-lg italic uppercase tracking-tighter">
+                Beta 0.1
+            </h2>
         </div>
 
         <!-- Action Cards -->

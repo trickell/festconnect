@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Routing\Controller as BaseController;
 
+use Illuminate\Support\Facades\Mail;
+use App\Mail\BetaInviteMail;
+
 class BetaInviteController extends BaseController
 {
     public function requestInvite(Request $request)
@@ -44,12 +47,22 @@ class BetaInviteController extends BaseController
             'sent_at' => now()
         ]);
 
-        // Mock Email Sending
-        Log::info("Beta Invite sent to {$email} with code: {$invite->code}");
+        // Send Actual Email via SendGrid/SMTP
+        $registrationUrl = url('/invitecode') . '?code=' . $invite->code;
+        try {
+            Mail::to($email)->send(new BetaInviteMail($invite->code, $registrationUrl));
+            Log::info("Beta Invite sent to {$email} with code: {$invite->code}");
+        } catch (\Exception $e) {
+            Log::error("Failed to send beta invite to {$email}: " . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to send invite email. Please contact support.'
+            ]);
+        }
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Invite code has been sent to your email! (Check logs for code)'
+            'message' => 'Invite code has been sent to your email! Please check your inbox.'
         ]);
     }
 
