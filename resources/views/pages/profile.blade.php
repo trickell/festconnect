@@ -12,6 +12,13 @@
     editContent: '',
     showWelcomeModal: {{ (!$user->has_seen_welcome && $isOwner) ? 'true' : 'false' }},
     generatedInvites: @js($generatedInvites ?? []),
+    passwordUnlocked: false,
+    sliderProgress: 0,
+    isDragging: false,
+    resetPasswordLock() {
+        this.passwordUnlocked = false;
+        this.sliderProgress = 0;
+    },
     async fetchThreads() {
         try {
             const res = await fetch('/get_messages');
@@ -371,10 +378,85 @@
                                         </div>
                                         <div>
                                             <label
-                                                class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Change
-                                                Password</label>
-                                            <input type="password" name="password" placeholder="••••••••"
-                                                class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 transition">
+                                                class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
+                                                Change Password
+                                            </label>
+                                            <div class="relative group/pwd overflow-hidden rounded-xl h-[50px]">
+                                                <input type="password" name="password" placeholder="••••••••"
+                                                    x-ref="passwordInput" :disabled="!passwordUnlocked"
+                                                    :class="passwordUnlocked ? 'bg-indigo-600/10 border-indigo-500 text-white' : 'bg-white/5 border-white/10 text-gray-500 cursor-not-allowed'"
+                                                    class="w-full h-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all duration-500">
+
+                                                <!-- Lock Overlay -->
+                                                <div x-show="!passwordUnlocked"
+                                                    x-transition:leave="transition ease-in duration-300 transform"
+                                                    x-transition:leave-start="opacity-100 scale-100"
+                                                    x-transition:leave-end="opacity-0 scale-95"
+                                                    class="absolute inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center">
+
+                                                    <!-- Lock Icon (Initial State) -->
+                                                    <div x-show="sliderProgress === 0" class="flex items-center gap-3">
+                                                        <div class="p-2 bg-white/5 rounded-lg">
+                                                            <svg class="w-4 h-4 text-gray-400" fill="none"
+                                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    stroke-width="2"
+                                                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                                            </svg>
+                                                        </div>
+                                                        <span
+                                                            class="text-[9px] font-black uppercase tracking-widest text-gray-400 opacity-50">Swipe
+                                                            to unlock</span>
+                                                    </div>
+
+                                                    <!-- Slider Track -->
+                                                    <div class="absolute inset-2 bg-white/5 rounded-lg overflow-hidden flex items-center"
+                                                        @mousedown="isDragging = true"
+                                                        @touchstart.passive="isDragging = true" @mousemove.window="if(isDragging) { 
+                                                                    let rect = $el.getBoundingClientRect();
+                                                                    let x = $event.clientX - rect.left;
+                                                                    sliderProgress = Math.max(0, Math.min(100, (x / rect.width) * 100));
+                                                                    if(sliderProgress >= 90) { 
+                                                                        passwordUnlocked = true; 
+                                                                        isDragging = false;
+                                                                        $nextTick(() => { $refs.passwordInput.focus(); });
+                                                                    }
+                                                                }" @touchmove.window.passive="if(isDragging) {
+                                                                    let rect = $el.getBoundingClientRect();
+                                                                    let x = $event.touches[0].clientX - rect.left;
+                                                                    sliderProgress = Math.max(0, Math.min(100, (x / rect.width) * 100));
+                                                                    if(sliderProgress >= 90) { 
+                                                                        passwordUnlocked = true; 
+                                                                        isDragging = false;
+                                                                        $nextTick(() => { $refs.passwordInput.focus(); });
+                                                                    }
+                                                                }"
+                                                        @mouseup.window="if(isDragging && sliderProgress < 90) { sliderProgress = 0; isDragging = false; }"
+                                                        @touchend.window="if(isDragging && sliderProgress < 90) { sliderProgress = 0; isDragging = false; }">
+
+                                                        <!-- Progress Bar -->
+                                                        <div class="absolute inset-y-0 left-0 bg-gradient-to-r from-indigo-600/50 to-purple-600/50 transition-all duration-75"
+                                                            :style="`width: ${sliderProgress}%` "></div>
+
+                                                        <!-- Handle -->
+                                                        <div class="absolute inset-y-1 w-10 bg-white rounded-md shadow-2xl flex items-center justify-center cursor-grab active:cursor-grabbing transition-all duration-75 z-10"
+                                                            :style="`left: calc(${sliderProgress}% - ${sliderProgress > 10 ? '40px' : '0px'})` ">
+                                                            <svg class="w-4 h-4 text-indigo-600" fill="none"
+                                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    stroke-width="3" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                                                            </svg>
+                                                        </div>
+
+                                                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none"
+                                                            x-show="sliderProgress < 50">
+                                                            <span
+                                                                class="text-[8px] font-black uppercase tracking-[0.2em] text-white/20">Slide
+                                                                Right</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -498,70 +580,70 @@
             <!-- Manage Posts Section -->
             @if($isOwner)
                 <div x-show="tab === 'posts'" x-cloak class="animate-fade-in-up space-y-6" x-data="{ 
-                                                                                            posts: @js($user->posts->map(fn($p) => [
-                                                                                                'id' => $p->id,
-                                                                                                'category' => $p->category ?? 'Chat',
-                                                                                                'post' => $p->post,
-                                                                                                'created_at' => $p->created_at->toDateTimeString(),
-                                                                                                'updated_at' => $p->updated_at->toDateTimeString(),
-                                                                                                'diff' => $p->created_at->diffForHumans(),
-                                                                                                'updated_diff' => $p->updated_at->diffForHumans(),
-                                                                                                'is_updated' => $p->created_at != $p->updated_at,
-                                                                                                'images' => $p->images ?? []
-                                                                                            ])),
-                                                                                            sortBy: 'newest',
-                                                                                            editingId: null,
-                                                                                            editContent: '',
-                                                                                            get sortedPosts() {
-                                                                                                let sorted = [...this.posts];
-                                                                                                if (this.sortBy === 'newest') {
-                                                                                                    return sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-                                                                                                } else if (this.sortBy === 'oldest') {
-                                                                                                    return sorted.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-                                                                                                } else if (this.sortBy === 'type') {
-                                                                                                    return sorted.sort((a, b) => a.category.localeCompare(b.category));
-                                                                                                }
-                                                                                                return sorted;
-                                                                                            },
-                                                                                            async savePost(id) {
-                                                                                                try {
-                                                                                                    const res = await fetch('/update_post/' + id, {
-                                                                                                        method: 'POST',
-                                                                                                        headers: { 
-                                                                                                            'Content-Type': 'application/json',
-                                                                                                            'X-CSRF-TOKEN': '{{ csrf_token() }}' 
+                                                                                                        posts: @js($user->posts->map(fn($p) => [
+                                                                                                            'id' => $p->id,
+                                                                                                            'category' => $p->category ?? 'Chat',
+                                                                                                            'post' => $p->post,
+                                                                                                            'created_at' => $p->created_at->toDateTimeString(),
+                                                                                                            'updated_at' => $p->updated_at->toDateTimeString(),
+                                                                                                            'diff' => $p->created_at->diffForHumans(),
+                                                                                                            'updated_diff' => $p->updated_at->diffForHumans(),
+                                                                                                            'is_updated' => $p->created_at != $p->updated_at,
+                                                                                                            'images' => $p->images ?? []
+                                                                                                        ])),
+                                                                                                        sortBy: 'newest',
+                                                                                                        editingId: null,
+                                                                                                        editContent: '',
+                                                                                                        get sortedPosts() {
+                                                                                                            let sorted = [...this.posts];
+                                                                                                            if (this.sortBy === 'newest') {
+                                                                                                                return sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                                                                                                            } else if (this.sortBy === 'oldest') {
+                                                                                                                return sorted.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                                                                                                            } else if (this.sortBy === 'type') {
+                                                                                                                return sorted.sort((a, b) => a.category.localeCompare(b.category));
+                                                                                                            }
+                                                                                                            return sorted;
                                                                                                         },
-                                                                                                        body: JSON.stringify({ post: this.editContent })
-                                                                                                    });
-                                                                                                    const data = await res.json();
-                                                                                                    if (data.status === 'success') {
-                                                                                                        const idx = this.posts.findIndex(p => p.id === id);
-                                                                                                        this.posts[idx].post = data.post.post;
-                                                                                                        this.posts[idx].updated_at = data.post.updated_at;
-                                                                                                        this.posts[idx].updated_diff = 'just now';
-                                                                                                        this.posts[idx].is_updated = true;
-                                                                                                        this.editingId = null;
-                                                                                                    } else {
-                                                                                                        alert(data.message);
-                                                                                                    }
-                                                                                                } catch (e) { alert('Error saving'); }
-                                                                                            },
-                                                                                            async deletePost(id) {
-                                                                                                if (!confirm('Are you sure you want to PERMANENTLY delete this post? This cannot be undone.')) return;
-                                                                                                try {
-                                                                                                    const res = await fetch('/delete_post/' + id, {
-                                                                                                        method: 'POST',
-                                                                                                        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
-                                                                                                    });
-                                                                                                    const data = await res.json();
-                                                                                                    if (data.status === 'success') {
-                                                                                                        this.posts = this.posts.filter(p => p.id !== id);
-                                                                                                    } else {
-                                                                                                        alert(data.message);
-                                                                                                    }
-                                                                                                } catch (e) { alert('Error deleting'); }
-                                                                                            }
-                                                                                        }">
+                                                                                                        async savePost(id) {
+                                                                                                            try {
+                                                                                                                const res = await fetch('/update_post/' + id, {
+                                                                                                                    method: 'POST',
+                                                                                                                    headers: { 
+                                                                                                                        'Content-Type': 'application/json',
+                                                                                                                        'X-CSRF-TOKEN': '{{ csrf_token() }}' 
+                                                                                                                    },
+                                                                                                                    body: JSON.stringify({ post: this.editContent })
+                                                                                                                });
+                                                                                                                const data = await res.json();
+                                                                                                                if (data.status === 'success') {
+                                                                                                                    const idx = this.posts.findIndex(p => p.id === id);
+                                                                                                                    this.posts[idx].post = data.post.post;
+                                                                                                                    this.posts[idx].updated_at = data.post.updated_at;
+                                                                                                                    this.posts[idx].updated_diff = 'just now';
+                                                                                                                    this.posts[idx].is_updated = true;
+                                                                                                                    this.editingId = null;
+                                                                                                                } else {
+                                                                                                                    alert(data.message);
+                                                                                                                }
+                                                                                                            } catch (e) { alert('Error saving'); }
+                                                                                                        },
+                                                                                                        async deletePost(id) {
+                                                                                                            if (!confirm('Are you sure you want to PERMANENTLY delete this post? This cannot be undone.')) return;
+                                                                                                            try {
+                                                                                                                const res = await fetch('/delete_post/' + id, {
+                                                                                                                    method: 'POST',
+                                                                                                                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                                                                                                                });
+                                                                                                                const data = await res.json();
+                                                                                                                if (data.status === 'success') {
+                                                                                                                    this.posts = this.posts.filter(p => p.id !== id);
+                                                                                                                } else {
+                                                                                                                    alert(data.message);
+                                                                                                                }
+                                                                                                            } catch (e) { alert('Error deleting'); }
+                                                                                                        }
+                                                                                                    }">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                         <h2 class="text-2xl font-black italic uppercase tracking-tighter text-pink-400">My Activity</h2>
                         <div class="flex items-center gap-3 bg-white/5 p-2 rounded-2xl border border-white/10">
@@ -955,6 +1037,9 @@
 
             function toggleEditMode() {
                 isEditMode = !isEditMode;
+                if (!isEditMode) {
+                    window.dispatchEvent(new CustomEvent('reset-password-lock'));
+                }
                 document.getElementById('profile_form').classList.toggle('hidden', !isEditMode);
                 document.getElementById('edit_btn').classList.toggle('bg-white/10', isEditMode);
                 document.querySelectorAll('.lg\\:col-span-2 > div').forEach(el => {
