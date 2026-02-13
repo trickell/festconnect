@@ -47,6 +47,10 @@
                 :class="tab === 'settings' ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/20' : 'bg-white/5 text-gray-400 hover:bg-white/10'"
                 class="px-8 py-3 rounded-2xl font-black uppercase tracking-widest transition text-xs">Platform
                 Settings</button>
+            <button @click="tab = 'invites'; loadInvites();"
+                :class="tab === 'invites' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'bg-white/5 text-gray-400 hover:bg-white/10'"
+                class="px-8 py-3 rounded-2xl font-black uppercase tracking-widest transition text-xs">Beta
+                Invites</button>
         </div>
 
         <!-- Tab Content: Support Tickets -->
@@ -59,7 +63,7 @@
                             <div class="flex items-center gap-4 flex-wrap">
                                 <span
                                     class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest 
-                                                                        {{ $ticket->status === 'open' ? 'bg-green-500/20 text-green-400' : ($ticket->status === 'resolved' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-400') }}">
+                                                                                {{ $ticket->status === 'open' ? 'bg-green-500/20 text-green-400' : ($ticket->status === 'resolved' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-400') }}">
                                     {{ $ticket->status }}
                                 </span>
                                 <span
@@ -153,8 +157,7 @@
                 <!-- Registration Control -->
                 <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
                     <h2 class="text-2xl font-bold text-orange-400 mb-2">Beta Controls</h2>
-                    <p class="text-gray-500 text-xs uppercase tracking-widest mb-6">Manage user registration and invites
-                    </p>
+                    <p class="text-gray-500 text-xs uppercase tracking-widest mb-6">Manage user registration</p>
 
                     <div class="space-y-6">
                         <div
@@ -170,21 +173,9 @@
                                 </div>
                             </button>
                         </div>
-
-                        <div class="p-6 bg-orange-600/10 border border-orange-500/20 rounded-2xl">
-                            <h3 class="text-white font-bold mb-2">Invite Generation</h3>
-                            <p class="text-gray-400 text-xs mb-4">Quickly add 10 new randomly generated beta invite
-                                codes to the pool.</p>
-                            <button @click="generateInvites()" :disabled="generating"
-                                class="w-full bg-orange-600 hover:bg-orange-500 text-white py-3 rounded-xl font-black uppercase tracking-widest transition shadow-lg disabled:opacity-50">
-                                <span x-show="!generating">Generate 10 More Codes</span>
-                                <span x-show="generating">Generating...</span>
-                            </button>
-                        </div>
                     </div>
                 </div>
 
-                <!-- Future Settings Placeholder -->
                 <div
                     class="bg-white/5 backdrop-blur-xl border border-white/10 border-dashed rounded-3xl p-8 flex flex-col items-center justify-center text-center opacity-30">
                     <svg class="w-12 h-12 text-gray-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -196,6 +187,100 @@
                     </svg>
                     <span class="text-[10px] font-black uppercase tracking-widest text-gray-500">More Settings Coming
                         Soon</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: Beta Invites -->
+        <div x-show="tab === 'invites'" class="space-y-8 animate-fade-in-up" x-cloak>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Metric Cards -->
+                <div
+                    class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl relative overflow-hidden group">
+                    <div class="absolute -top-12 -right-12 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl"></div>
+                    <h3 class="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Available Codes</h3>
+                    <p class="text-4xl font-black text-amber-500 italic" x-text="inviteData.counts.inactive || 0"></p>
+                </div>
+                <div
+                    class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl relative overflow-hidden group">
+                    <div class="absolute -top-12 -right-12 w-24 h-24 bg-green-500/10 rounded-full blur-2xl"></div>
+                    <h3 class="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Activated Codes</h3>
+                    <p class="text-4xl font-black text-green-500 italic" x-text="inviteData.counts.active || 0"></p>
+                </div>
+                <div
+                    class="bg-orange-600/10 border border-orange-500/20 rounded-3xl p-6 shadow-2xl flex flex-col justify-center">
+                    <button @click="generateInvites(); loadInvites();" :disabled="generating"
+                        class="w-full bg-orange-600 hover:bg-orange-500 text-white py-3 rounded-xl font-black uppercase tracking-widest transition shadow-lg disabled:opacity-50 text-xs">
+                        <span x-show="!generating">Generate 10 More</span>
+                        <span x-show="generating">Generating...</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Available / Inactive List -->
+                <div class="space-y-6">
+                    <h3
+                        class="text-xl font-bold text-amber-400 uppercase tracking-tighter italic flex items-center gap-3">
+                        <span class="w-2 h-2 bg-amber-400 rounded-full"></span> Available Codes
+                    </h3>
+                    <div class="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar"
+                        id="inactive_invites_container">
+                        <template x-for="invite in inviteData.inactive" :key="invite.id">
+                            <div
+                                class="bg-white/5 border border-white/10 rounded-2xl p-4 flex justify-between items-center group hover:border-amber-500/30 transition-colors">
+                                <div>
+                                    <p class="text-lg font-mono font-black text-white tracking-widest"
+                                        x-text="invite.code"></p>
+                                    <p class="text-[9px] text-gray-500 uppercase font-bold tracking-widest mt-1">
+                                        Gen by <span class="text-gray-300"
+                                            x-text="invite.generator ? invite.generator.name : 'System'"></span> •
+                                        <span x-text="new Date(invite.created_at).toLocaleDateString()"></span>
+                                    </p>
+                                </div>
+                                <button @click="navigator.clipboard.writeText(invite.code); alert('Copied!')"
+                                    class="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Activated / Active List -->
+                <div class="space-y-6">
+                    <h3
+                        class="text-xl font-bold text-green-400 uppercase tracking-tighter italic flex items-center gap-3">
+                        <span class="w-2 h-2 bg-green-400 rounded-full"></span> Activated Codes
+                    </h3>
+                    <div class="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar"
+                        id="active_invites_container">
+                        <template x-for="invite in inviteData.active" :key="invite.id">
+                            <div
+                                class="bg-white/5 border border-white/10 rounded-2xl p-4 flex justify-between items-center group hover:border-green-500/30 transition-colors">
+                                <div>
+                                    <p class="text-lg font-mono font-black text-gray-400 line-through tracking-widest"
+                                        x-text="invite.code"></p>
+                                    <p class="text-[9px] text-gray-500 uppercase font-bold tracking-widest mt-1">
+                                        Used by <span class="text-green-400 font-black"
+                                            x-text="invite.user ? invite.user.name : 'Unknown'"></span> •
+                                        <span
+                                            x-text="new Date(invite.activated_at || invite.updated_at).toLocaleDateString()"></span>
+                                    </p>
+                                </div>
+                                <div class="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
                 </div>
             </div>
         </div>
@@ -342,7 +427,16 @@
     document.addEventListener('alpine:init', () => {
         Alpine.data('adminDashboard', () => ({
             tab: 'tickets',
-            ...platformSettings()
+            inviteData: { active: [], inactive: [], counts: { active: 0, inactive: 0, total: 0 } },
+            ...platformSettings(),
+            async loadInvites() {
+                try {
+                    const res = await fetch('/admin/get_invites');
+                    this.inviteData = await res.json();
+                } catch (e) {
+                    console.error('Error loading invites');
+                }
+            }
         }));
     });
 </script>
@@ -496,6 +590,24 @@
 
     [x-cloak] {
         display: none !important;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.2);
     }
 </style>
 @stop

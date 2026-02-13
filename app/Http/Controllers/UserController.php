@@ -61,7 +61,7 @@ class UserController extends BaseController
     public function logout()
     {
         session()->forget('user');
-        return redirect()->back();
+        return redirect('/');
     }
 
     public function update_presence()

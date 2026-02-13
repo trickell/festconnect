@@ -175,10 +175,34 @@ class ModerationController extends BaseController
             \App\Models\BetaInvite::create([
                 'code' => strtoupper(\Illuminate\Support\Str::random(10)),
                 'is_active' => false,
+                'user_id' => session('user')->getKey(),
             ]);
         }
 
         return response()->json(['status' => 'success', 'message' => '10 more invite codes generated.']);
+    }
+
+    public function get_all_invites()
+    {
+        $this->authorizeAdmin();
+
+        $invites = \App\Models\BetaInvite::with(['generator', 'user'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $active = $invites->where('is_active', true)->values();
+        $inactive = $invites->where('is_active', false)->values();
+
+        return response()->json([
+            'invites' => $invites,
+            'active' => $active,
+            'inactive' => $inactive,
+            'counts' => [
+                'active' => $active->count(),
+                'inactive' => $inactive->count(),
+                'total' => $invites->count()
+            ]
+        ]);
     }
 
     // --- Helpers ---
