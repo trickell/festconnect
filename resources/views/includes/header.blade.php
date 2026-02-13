@@ -4,7 +4,7 @@
         <!-- Logo -->
         <a href="{{ url('/') }}"
             class="flex text-2xl md:text-3xl font-bold text-white tracking-wider hover:text-purple-300 transition">
-            Fest<span class="text-purple-400">Connect</span>
+            Fest<span class="text-purple-400">Connection</span>
         </a>
 
         <!-- Desktop Menu -->
@@ -222,21 +222,21 @@
                     }
 
                     return `
-                                            <div class="px-4 py-4 hover:bg-white/5 border-b border-white/5 transition cursor-pointer group" onclick="handleNotifClick(${JSON.stringify(data).replace(/"/g, '&quot;')})">
-                                                <div class="flex gap-3 items-start">
-                                                    <span class="text-sm mt-0.5">${icon}</span>
-                                                    <div class="flex-grow">
-                                                        <p class="text-[11px] text-gray-200 leading-snug">
-                                                            <span class="font-black text-purple-400 uppercase tracking-tighter">${actor}</span> 
-                                                            ${msg}
-                                                        </p>
-                                                        <span class="text-[8px] text-gray-500 italic mt-1 block uppercase font-black tracking-[0.1em] opacity-60">
-                                                            ${new Date(n.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })} @ ${new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                        </span>
+                                                    <div class="px-4 py-4 hover:bg-white/5 border-b border-white/5 transition cursor-pointer group" onclick="handleNotifClick(${JSON.stringify(data).replace(/"/g, '&quot;')})">
+                                                        <div class="flex gap-3 items-start">
+                                                            <span class="text-sm mt-0.5">${icon}</span>
+                                                            <div class="flex-grow">
+                                                                <p class="text-[11px] text-gray-200 leading-snug">
+                                                                    <span class="font-black text-purple-400 uppercase tracking-tighter">${actor}</span> 
+                                                                    ${msg}
+                                                                </p>
+                                                                <span class="text-[8px] text-gray-500 italic mt-1 block uppercase font-black tracking-[0.1em] opacity-60">
+                                                                    ${new Date(n.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })} @ ${new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                </span>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </div>
-                                        `;
+                                                `;
                 }).join('');
             };
 
