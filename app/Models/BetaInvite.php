@@ -15,7 +15,19 @@ class BetaInvite extends Model
         'sent_at',
         'activated_at',
         'is_active',
+        'user_id',
+        'used_by_user_id',
     ];
+
+    public function generator()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'used_by_user_id');
+    }
 
     protected $casts = [
         'sent_at' => 'datetime',

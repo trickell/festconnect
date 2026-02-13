@@ -92,7 +92,7 @@
         </div>
         <div class="footer">
             <p>If you didn't request this invite, you can safely ignore this email.</p>
-            <p>&copy; {{ date('Y') }} FestConnect. All rights reserved.</p>
+            <p>&copy; {{ date('Y') }} FestConnection. All rights reserved.</p>
         </div>
     </div>
 </body>

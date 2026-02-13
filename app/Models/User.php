@@ -32,13 +32,12 @@ class User extends Authenticatable
         'google_id',
         'google_token',
         'google_refresh_token',
-        'facebook_id'
+        'facebook_id',
+        'has_seen_welcome'
     ];
 
     /**
      * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
      */
     protected $hidden = [
         'password',
@@ -56,11 +55,17 @@ class User extends Authenticatable
         'genres' => 'array',
         'last_seen_at' => 'datetime',
         'banned_until' => 'datetime',
+        'has_seen_welcome' => 'boolean',
     ];
 
     public function posts()
     {
         return $this->hasMany(Posts::class, 'user_id', 'id');
+    }
+
+    public function generatedInvites()
+    {
+        return $this->hasMany(BetaInvite::class, 'user_id');
     }
 
 }

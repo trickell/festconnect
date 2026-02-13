@@ -10,6 +10,8 @@
     activeThreadId: null,
     editingMsgId: null,
     editContent: '',
+    showWelcomeModal: {{ (!$user->has_seen_welcome && $isOwner) ? 'true' : 'false' }},
+    generatedInvites: @js($generatedInvites ?? []),
     async fetchThreads() {
         try {
             const res = await fetch('/get_messages');
@@ -85,6 +87,20 @@
                 if (thread) thread.messages = thread.messages.filter(m => m.id !== id);
             }
         } catch (e) { alert('Error deleting'); }
+    },
+    async markWelcomeSeen() {
+        try {
+            await fetch('/mark_welcome_seen', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+            });
+            this.showWelcomeModal = false;
+        } catch (e) {}
+    },
+    copyCode(code) {
+        navigator.clipboard.writeText(code).then(() => {
+            alert('Code copied to clipboard!');
+        });
     },
     init() {
         this.fetchThreads();
@@ -248,6 +264,12 @@
                                 class="flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] text-white animate-pulse"
                                 x-text="unreadCount"></span>
                         </button>
+                    @endif
+                    @if($isOwner)
+                        <button @click="tab = 'invites'"
+                            :class="tab === 'invites' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'bg-white/5 text-gray-400 hover:bg-white/10'"
+                            class="px-8 py-3 rounded-2xl font-black uppercase tracking-widest transition text-xs">Invite
+                            Codes</button>
                     @endif
                     <button @click="tab = 'penalties'"
                         :class="tab === 'penalties' ? 'bg-red-600 text-white shadow-lg shadow-red-500/20' : 'bg-white/5 text-gray-400 hover:bg-white/10'"
@@ -476,70 +498,70 @@
             <!-- Manage Posts Section -->
             @if($isOwner)
                 <div x-show="tab === 'posts'" x-cloak class="animate-fade-in-up space-y-6" x-data="{ 
-                                                                    posts: @js($user->posts->map(fn($p) => [
-                                                                        'id' => $p->id,
-                                                                        'category' => $p->category ?? 'Chat',
-                                                                        'post' => $p->post,
-                                                                        'created_at' => $p->created_at->toDateTimeString(),
-                                                                        'updated_at' => $p->updated_at->toDateTimeString(),
-                                                                        'diff' => $p->created_at->diffForHumans(),
-                                                                        'updated_diff' => $p->updated_at->diffForHumans(),
-                                                                        'is_updated' => $p->created_at != $p->updated_at,
-                                                                        'images' => $p->images ?? []
-                                                                    ])),
-                                                                    sortBy: 'newest',
-                                                                    editingId: null,
-                                                                    editContent: '',
-                                                                    get sortedPosts() {
-                                                                        let sorted = [...this.posts];
-                                                                        if (this.sortBy === 'newest') {
-                                                                            return sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-                                                                        } else if (this.sortBy === 'oldest') {
-                                                                            return sorted.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-                                                                        } else if (this.sortBy === 'type') {
-                                                                            return sorted.sort((a, b) => a.category.localeCompare(b.category));
-                                                                        }
-                                                                        return sorted;
-                                                                    },
-                                                                    async savePost(id) {
-                                                                        try {
-                                                                            const res = await fetch('/update_post/' + id, {
-                                                                                method: 'POST',
-                                                                                headers: { 
-                                                                                    'Content-Type': 'application/json',
-                                                                                    'X-CSRF-TOKEN': '{{ csrf_token() }}' 
-                                                                                },
-                                                                                body: JSON.stringify({ post: this.editContent })
-                                                                            });
-                                                                            const data = await res.json();
-                                                                            if (data.status === 'success') {
-                                                                                const idx = this.posts.findIndex(p => p.id === id);
-                                                                                this.posts[idx].post = data.post.post;
-                                                                                this.posts[idx].updated_at = data.post.updated_at;
-                                                                                this.posts[idx].updated_diff = 'just now';
-                                                                                this.posts[idx].is_updated = true;
-                                                                                this.editingId = null;
-                                                                            } else {
-                                                                                alert(data.message);
-                                                                            }
-                                                                        } catch (e) { alert('Error saving'); }
-                                                                    },
-                                                                    async deletePost(id) {
-                                                                        if (!confirm('Are you sure you want to PERMANENTLY delete this post? This cannot be undone.')) return;
-                                                                        try {
-                                                                            const res = await fetch('/delete_post/' + id, {
-                                                                                method: 'POST',
-                                                                                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
-                                                                            });
-                                                                            const data = await res.json();
-                                                                            if (data.status === 'success') {
-                                                                                this.posts = this.posts.filter(p => p.id !== id);
-                                                                            } else {
-                                                                                alert(data.message);
-                                                                            }
-                                                                        } catch (e) { alert('Error deleting'); }
-                                                                    }
-                                                                }">
+                                                                                            posts: @js($user->posts->map(fn($p) => [
+                                                                                                'id' => $p->id,
+                                                                                                'category' => $p->category ?? 'Chat',
+                                                                                                'post' => $p->post,
+                                                                                                'created_at' => $p->created_at->toDateTimeString(),
+                                                                                                'updated_at' => $p->updated_at->toDateTimeString(),
+                                                                                                'diff' => $p->created_at->diffForHumans(),
+                                                                                                'updated_diff' => $p->updated_at->diffForHumans(),
+                                                                                                'is_updated' => $p->created_at != $p->updated_at,
+                                                                                                'images' => $p->images ?? []
+                                                                                            ])),
+                                                                                            sortBy: 'newest',
+                                                                                            editingId: null,
+                                                                                            editContent: '',
+                                                                                            get sortedPosts() {
+                                                                                                let sorted = [...this.posts];
+                                                                                                if (this.sortBy === 'newest') {
+                                                                                                    return sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                                                                                                } else if (this.sortBy === 'oldest') {
+                                                                                                    return sorted.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                                                                                                } else if (this.sortBy === 'type') {
+                                                                                                    return sorted.sort((a, b) => a.category.localeCompare(b.category));
+                                                                                                }
+                                                                                                return sorted;
+                                                                                            },
+                                                                                            async savePost(id) {
+                                                                                                try {
+                                                                                                    const res = await fetch('/update_post/' + id, {
+                                                                                                        method: 'POST',
+                                                                                                        headers: { 
+                                                                                                            'Content-Type': 'application/json',
+                                                                                                            'X-CSRF-TOKEN': '{{ csrf_token() }}' 
+                                                                                                        },
+                                                                                                        body: JSON.stringify({ post: this.editContent })
+                                                                                                    });
+                                                                                                    const data = await res.json();
+                                                                                                    if (data.status === 'success') {
+                                                                                                        const idx = this.posts.findIndex(p => p.id === id);
+                                                                                                        this.posts[idx].post = data.post.post;
+                                                                                                        this.posts[idx].updated_at = data.post.updated_at;
+                                                                                                        this.posts[idx].updated_diff = 'just now';
+                                                                                                        this.posts[idx].is_updated = true;
+                                                                                                        this.editingId = null;
+                                                                                                    } else {
+                                                                                                        alert(data.message);
+                                                                                                    }
+                                                                                                } catch (e) { alert('Error saving'); }
+                                                                                            },
+                                                                                            async deletePost(id) {
+                                                                                                if (!confirm('Are you sure you want to PERMANENTLY delete this post? This cannot be undone.')) return;
+                                                                                                try {
+                                                                                                    const res = await fetch('/delete_post/' + id, {
+                                                                                                        method: 'POST',
+                                                                                                        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                                                                                                    });
+                                                                                                    const data = await res.json();
+                                                                                                    if (data.status === 'success') {
+                                                                                                        this.posts = this.posts.filter(p => p.id !== id);
+                                                                                                    } else {
+                                                                                                        alert(data.message);
+                                                                                                    }
+                                                                                                } catch (e) { alert('Error deleting'); }
+                                                                                            }
+                                                                                        }">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                         <h2 class="text-2xl font-black italic uppercase tracking-tighter text-pink-400">My Activity</h2>
                         <div class="flex items-center gap-3 bg-white/5 p-2 rounded-2xl border border-white/10">
@@ -830,6 +852,56 @@
                                                 </div>
                                             </form>
                                         </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            <!-- Invite Codes Section -->
+            @if($isOwner)
+                <div x-show="tab === 'invites'" x-cloak class="animate-fade-in-up space-y-6">
+                    <div class="bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl">
+                        <h2 class="text-2xl font-black italic uppercase tracking-tighter text-amber-400 mb-6">Your Beta
+                            Invites</h2>
+                        <p class="text-gray-400 text-sm mb-8">Share these codes with 5 friends to invite them to the
+                            FestConnection community! Each code can only be used once.</p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <template x-for="invite in generatedInvites" :key="invite.id">
+                                <div class="bg-black/30 border border-white/10 p-5 rounded-2xl flex items-center justify-between group/invite transition-all duration-300"
+                                    :class="invite.is_active ? 'opacity-40 grayscale pointer-events-none' : 'hover:border-amber-500/50 hover:bg-black/40'">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
+                                            :class="invite.is_active ? 'bg-gray-500/10 text-gray-500' : 'bg-amber-500/10 text-amber-500'">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h4 class="text-lg font-black tracking-widest font-mono transition-all"
+                                                :class="invite.is_active ? 'text-gray-500 line-through' : 'text-white'"
+                                                x-text="invite.code"></h4>
+                                            <p class="text-[10px] font-black uppercase tracking-widest"
+                                                :class="invite.is_active ? 'text-red-500/70' : 'text-green-500'"
+                                                x-text="invite.is_active ? 'Used' : 'Available'"></p>
+                                        </div>
+                                    </div>
+                                    <button x-show="!invite.is_active" @click="copyCode(invite.code)"
+                                        class="p-3 bg-white/5 hover:bg-amber-500 text-gray-400 hover:text-white rounded-xl transition-all shadow-lg active:scale-90">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M8 5H6a2 2 0 00-2 2v12a2 2 0 00-2 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                        </svg>
+                                    </button>
+                                    <div x-show="invite.is_active" class="px-3 text-gray-600">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M5 13l4 4L19 7" />
+                                        </svg>
                                     </div>
                                 </div>
                             </template>
@@ -1133,4 +1205,45 @@
                 animation: pulse-subtle 4s ease-in-out infinite;
             }
         </style>
+        <!-- Welcome Modal -->
+        <div x-show="showWelcomeModal" x-cloak
+            class="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 backdrop-blur-xl p-4">
+            <div
+                class="bg-gray-900 border border-white/10 rounded-3xl w-full max-w-xl p-10 shadow-2xl animate-fade-in-up relative overflow-hidden">
+                <!-- Decor -->
+                <div class="absolute -top-12 -right-12 w-48 h-48 bg-purple-600/20 rounded-full blur-3xl"></div>
+                <div class="absolute -bottom-12 -left-12 w-48 h-48 bg-pink-600/20 rounded-full blur-3xl"></div>
+
+                <div class="relative z-10 text-center">
+                    <div
+                        class="w-100 h-20 bg-gradient-to-tr from-purple-600 to-pink-600 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl transform rotate-3">
+                        <img src="{{ asset('img/logo_email.png') }}" alt="Logo" class="w-full h-full object-contain">
+                    </div>
+
+                    <h2 class="text-4xl font-black italic uppercase tracking-tighter text-white mb-4">Welcome to the
+                        Fam!</h2>
+                    <p class="text-purple-400 font-bold uppercase tracking-widest text-xs mb-8">You're officially
+                        part
+                        of the FestConnection Beta</p>
+
+                    <div class="bg-white/5 border border-white/10 p-6 rounded-2xl mb-8 text-left">
+                        <p class="text-gray-300 leading-relaxed mb-4">We're stoked to have you here! As a beta
+                            member,
+                            you have <span class="text-white font-bold">5 exclusive invite codes</span> to bring
+                            your
+                            festival squad onto the platform.</p>
+                        <p class="text-gray-300 leading-relaxed">You can find your codes in the <span
+                                class="text-amber-400 font-bold">Invite Codes</span> tab right here on your profile
+                            page. Copy them and send them over to your friends!</p>
+                    </div>
+
+                    <button @click="markWelcomeSeen()"
+                        class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 py-4 rounded-2xl font-black uppercase tracking-widest transition shadow-xl shadow-purple-600/20 active:scale-95 text-white">
+                        Let's Get Started
+                    </button>
+                </div>
+            </div>
+        </div>
+
         @stop
+        ```

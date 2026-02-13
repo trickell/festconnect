@@ -91,9 +91,10 @@
                     </div>
 
                     <form @submit.prevent="submitInvite" class="space-y-4">
-                        <div class="relative">
+                        <div class="relative text-left">
                             <input type="email" x-model="email" required
-                                class="w-full bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition shadow-inner"
+                                :class="status === 'duplicate' ? 'border-red-500 ring-2 ring-red-500/20' : 'border-white/10'"
+                                class="w-full bg-black/40 border rounded-2xl px-6 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition shadow-inner"
                                 placeholder="Enter your email address" />
                             <button type="submit" :disabled="loading"
                                 class="absolute right-2 top-2 bottom-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-6 rounded-xl font-bold uppercase tracking-widest transition shadow-lg disabled:opacity-50">
@@ -111,8 +112,10 @@
                         </div>
                     </form>
 
-                    <div x-show="message" :class="status === 'success' ? 'text-green-400' : 'text-red-400'"
-                        class="text-xs font-bold uppercase tracking-widest animate-fade-in" x-text="message" x-cloak>
+                    <div x-show="message"
+                        :class="(status === 'duplicate' || status === 'error') ? 'text-red-400' : 'text-green-400'"
+                        class="text-xs font-bold uppercase tracking-widest animate-fade-in text-center" x-text="message"
+                        x-cloak>
                     </div>
                 </div>
             </div>
