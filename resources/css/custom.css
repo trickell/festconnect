@@ -18,3 +18,32 @@ select {
     text-shadow: 5px 5px 15px rgba(0, 0, 0, 1);
     -webkit-text-stroke: 1px #833700;
 }
+
+/* Password Slider Styles */
+.cursor-grab {
+    cursor: grab;
+}
+
+.cursor-grabbing {
+    cursor: grabbing;
+}
+
+[x-cloak] {
+    display: none !important;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.animate-shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite linear;
+}

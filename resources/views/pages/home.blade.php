@@ -3,7 +3,7 @@
 @section('title', 'Fest Connection || Home')
 
 @section('content')
-<div class="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
+<div x-data="betaInviteForm()" class="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
     <!-- Video Background -->
     <x-video-background source="img/video/home_bg.mp4" />
 
@@ -48,7 +48,7 @@
             </a>
 
             <!-- Find Vendor Card -->
-            <a href="#"
+            <a href="#" @click.prevent="showVendorSoon = true"
                 class="group relative overflow-hidden p-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl hover:bg-white/20 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
                 <div class="flex items-start justify-between">
                     <div>
@@ -72,8 +72,7 @@
         </div>
 
         <!-- Beta Invite System -->
-        <div id="beta-invite-section" x-data="betaInviteForm()"
-            class="mt-16 w-full max-w-xl transition-all duration-700"
+        <div id="beta-invite-section" class="mt-16 w-full max-w-xl transition-all duration-700"
             :class="highlight ? 'scale-105 ring-4 ring-purple-300 ring-offset-8 ring-offset-black rounded-3xl animate-pulse-glow' : ''">
 
             <div
@@ -127,6 +126,50 @@
             </div>
         </div>
     </div>
+
+    <!-- Vendor Coming Soon Modal -->
+    <div x-show="showVendorSoon" x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+        x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100"
+        x-transition:leave-end="opacity-0 scale-95"
+        class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md" x-cloak>
+        <div class="bg-gray-900 border border-white/10 rounded-[2.5rem] w-full max-w-lg p-10 shadow-2xl relative overflow-hidden text-center"
+            @click.away="showVendorSoon = false">
+
+            <!-- Glow Effect -->
+            <div class="absolute -top-24 -right-24 w-48 h-48 bg-pink-600/20 blur-3xl rounded-full"></div>
+
+            <div class="relative z-10 space-y-8">
+                <!-- Icon -->
+                <div
+                    class="w-20 h-20 bg-pink-600/10 rounded-3xl flex items-center justify-center mx-auto border border-pink-500/20">
+                    <svg class="w-10 h-10 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                </div>
+
+                <div>
+                    <h2 class="text-3xl font-black italic uppercase tracking-tighter text-white mb-2">Coming Soon</h2>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        Our vendor discovery feature is currently in production. We can't wait to show you what we're
+                        building!
+                    </p>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <a href="{{ url('missed_connections') }}"
+                        class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 py-4 rounded-2xl font-black uppercase tracking-widest transition shadow-xl shadow-purple-600/20 active:scale-95 text-white text-sm">
+                        Visit Missed Connections
+                    </a>
+                    <button @click="showVendorSoon = false"
+                        class="w-full bg-white/5 hover:bg-white/10 py-4 rounded-2xl font-bold uppercase tracking-widest transition text-gray-400 text-xs">
+                        Maybe Later
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -136,6 +179,7 @@
             loading: false,
             message: '',
             status: '',
+            showVendorSoon: false,
             highlight: new URLSearchParams(window.location.search).has('highlight'),
             init() {
                 if (this.highlight) {
