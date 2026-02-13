@@ -104,6 +104,15 @@
                 password: '',
                 password_confirmation: ''
             },
+            init() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const code = urlParams.get('code');
+                if (code) {
+                    this.inviteCode = code.toUpperCase();
+                    // Auto-verify if code is present
+                    this.verifyCode();
+                }
+            },
             async verifyCode() {
                 if (!this.inviteCode) {
                     this.error = 'Please enter an invite code.';

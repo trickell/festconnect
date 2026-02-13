@@ -121,6 +121,7 @@ Route::post('/request_beta', [App\Http\Controllers\BetaInviteController::class, 
 Route::get('/invitecode', [App\Http\Controllers\BetaInviteController::class, 'showInvitePage']);
 Route::post('/verify_code', [App\Http\Controllers\BetaInviteController::class, 'verifyCode']);
 Route::post('/register_beta', [App\Http\Controllers\BetaInviteController::class, 'register']);
+Route::post('/mark_welcome_seen', [App\Http\Controllers\BetaInviteController::class, 'markWelcomeSeen']);
 Route::post('/admin/toggle_registration', [App\Http\Controllers\ModerationController::class, 'toggleRegistration']);
 Route::post('/admin/generate_invites', [App\Http\Controllers\ModerationController::class, 'generateMoreInvites']);
 

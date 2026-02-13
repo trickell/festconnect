@@ -52,7 +52,22 @@ class ProfileController extends BaseController
                 ->get();
         }
 
-        return view('pages.profile', compact('user', 'isOwner', 'penalties', 'modFlags', 'viewer'));
+        // Fetch generated invites (and generate them if none exist for the owner)
+        $generatedInvites = $user->generatedInvites;
+        if ($isOwner && $generatedInvites->isEmpty()) {
+            for ($i = 0; $i < 5; $i++) {
+                \App\Models\BetaInvite::create([
+                    'code' => strtoupper(\Illuminate\Support\Str::random(8)),
+                    'user_id' => $user->id,
+                    'is_active' => false
+                ]);
+            }
+            \Illuminate\Support\Facades\Log::info("Generated 5 codes for user: {$user->id}");
+            $generatedInvites = $user->fresh()->generatedInvites;
+        }
+
+        return view('pages.profile', compact('user', 'isOwner', 'penalties', 'modFlags', 'viewer'))
+            ->with('generatedInvites', $generatedInvites);
     }
 
     public function update(Request $request)

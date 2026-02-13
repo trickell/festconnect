@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Routing\Controller as BaseController;
 
+use Illuminate\Support\Facades\Mail;
+use App\Mail\BetaInviteMail;
+
 class BetaInviteController extends BaseController
 {
     public function requestInvite(Request $request)
@@ -21,7 +24,14 @@ class BetaInviteController extends BaseController
         $email = $request->email;
 
         // Check if an inactive code has been sent within 1 hour.
-// If it's been over an hour, that code can be used.
+        $existingInvite = BetaInvite::where('email', $email)->first();
+        if ($existingInvite) {
+            return response()->json([
+                'status' => 'duplicate',
+                'message' => 'This email address has already been used to request an invite. If you haven\'t received it yet, please check your spam, or use a friend\'s invite code from their profile page!'
+            ]);
+        }
+        // If it's been over an hour, that code can be used.
 // "Don't send a inactive code that was sent before 1 hour from the active sent timestamp."
 // This means we can reuse a code if it was sent more than 1 hour ago and is NOT active.
 
@@ -44,12 +54,22 @@ class BetaInviteController extends BaseController
             'sent_at' => now()
         ]);
 
-        // Mock Email Sending
-        Log::info("Beta Invite sent to {$email} with code: {$invite->code}");
+        // Send Actual Email via SendGrid/SMTP
+        $registrationUrl = url('/invitecode') . '?code=' . $invite->code;
+        try {
+            Mail::to($email)->send(new BetaInviteMail($invite->code, $registrationUrl));
+            Log::info("Beta Invite sent to {$email} with code: {$invite->code}");
+        } catch (\Exception $e) {
+            Log::error("Failed to send beta invite to {$email}: " . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to send invite email. Please contact support.'
+            ]);
+        }
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Invite code has been sent to your email! (Check logs for code)'
+            'message' => 'Invite code has been sent to your email! Please check your inbox.'
         ]);
     }
 
@@ -112,8 +132,18 @@ class BetaInviteController extends BaseController
 
             $invite->update([
                 'is_active' => true,
-                'activated_at' => now()
+                'activated_at' => now(),
+                'used_by_user_id' => $user->id
             ]);
+
+            // Generate 5 codes for the new user
+            for ($i = 0; $i < 5; $i++) {
+                BetaInvite::create([
+                    'code' => strtoupper(\Illuminate\Support\Str::random(8)),
+                    'user_id' => $user->id,
+                    'is_active' => false
+                ]);
+            }
 
             // Auto-login or session setup
             session(['user' => $user]);
@@ -129,5 +159,18 @@ class BetaInviteController extends BaseController
                 'message' => 'Registration failed: ' . $e->getMessage()
             ]);
         }
+    }
+
+    public function markWelcomeSeen()
+    {
+        if (!session()->has('user')) {
+            return response()->json(['status' => 'error'], 401);
+        }
+        $user = User::find(session('user')->getKey());
+        if ($user) {
+            $user->update(['has_seen_welcome' => true]);
+            session(['user' => $user]);
+        }
+        return response()->json(['status' => 'success']);
     }
 }
