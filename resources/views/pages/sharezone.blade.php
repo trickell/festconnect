@@ -450,7 +450,27 @@
 
         const renderPosts = (posts) => {
             if (!posts || posts.length === 0) {
-                feed.innerHTML = '<div class="col-span-full py-20 text-center opacity-50"><p>No shared moments yet. Be the first to post!</p></div>';
+                feed.innerHTML = `
+                    <div class="col-span-full py-20 text-center animate-fade-in px-4">
+                        <div class="inline-block p-10 bg-white/5 border border-white/10 rounded-[2.5rem] backdrop-blur-md shadow-2xl relative overflow-hidden group max-w-lg w-full">
+                            <!-- Background Decor -->
+                            <div class="absolute -top-24 -right-24 w-48 h-48 bg-pink-600/10 blur-3xl rounded-full transition-transform duration-1000 group-hover:scale-150"></div>
+                            
+                            <div class="relative z-10 flex flex-col items-center">
+                                <div class="w-20 h-20 bg-pink-600/10 rounded-3xl flex items-center justify-center mb-6 border border-pink-500/20 animate-bounce-slow">
+                                    <svg class="w-10 h-10 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-3xl font-black italic uppercase tracking-tighter text-white mb-2">No posts exists at the moment</h3>
+                                <p class="text-gray-400 text-sm font-bold uppercase tracking-widest mb-8 max-w-xs mx-auto leading-relaxed">Be the first to share your festival magic with the community!</p>
+                                <button onclick="document.getElementById('open_sidebar').click()" class="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white text-sm font-black uppercase tracking-[0.2em] py-4 rounded-2xl shadow-xl shadow-pink-600/20 active:scale-95 transition-all duration-300">
+                                    Share Something
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
                 lastFetchedDataHash = null;
                 return;
             }
