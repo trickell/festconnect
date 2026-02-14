@@ -91,7 +91,7 @@
 
                     <form @submit.prevent="submitInvite" class="space-y-4">
                         <div class="relative text-left">
-                            <input type="email" x-model="email" required
+                            <input type="email" x-model="email" x-ref="emailInput" required
                                 :class="status === 'duplicate' ? 'border-red-500 ring-2 ring-red-500/20' : 'border-white/10'"
                                 class="w-full bg-black/40 border rounded-2xl px-6 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition shadow-inner"
                                 placeholder="Enter your email address" />
@@ -170,6 +170,47 @@
             </div>
         </div>
     </div>
+
+    <!-- Beta Invite Only Modal -->
+    <div x-show="showBetaModal" x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+        x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100"
+        x-transition:leave-end="opacity-0 scale-95"
+        class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md" x-cloak>
+        <div class="bg-gray-900 border border-white/10 rounded-[2.5rem] w-full max-w-lg p-10 shadow-2xl relative overflow-hidden text-center"
+            @click.away="closeBetaModal">
+
+            <!-- Glow Effect -->
+            <div class="absolute -top-24 -right-24 w-48 h-48 bg-purple-600/20 blur-3xl rounded-full"></div>
+
+            <div class="relative z-10 space-y-8">
+                <!-- Icon -->
+                <div
+                    class="w-20 h-20 bg-purple-600/10 rounded-3xl flex items-center justify-center mx-auto border border-purple-500/20">
+                    <svg class="w-10 h-10 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                </div>
+
+                <div>
+                    <h2 class="text-3xl font-black italic uppercase tracking-tighter text-white mb-2">Beta Invite Only
+                    </h2>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        Sign up is closed at the moment and the website is currently beta invite only. Request a code
+                        from the form below.
+                    </p>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <button @click="closeBetaModal"
+                        class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 py-4 rounded-2xl font-black uppercase tracking-widest transition shadow-xl shadow-purple-600/20 active:scale-95 text-white text-sm">
+                        Request Invite
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -180,14 +221,22 @@
             message: '',
             status: '',
             showVendorSoon: false,
+            showBetaModal: false,
             highlight: new URLSearchParams(window.location.search).has('highlight'),
             init() {
                 if (this.highlight) {
+                    this.showBetaModal = true;
                     setTimeout(() => {
                         const el = document.getElementById('beta-invite-section');
                         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }, 500);
                 }
+            },
+            closeBetaModal() {
+                this.showBetaModal = false;
+                this.$nextTick(() => {
+                    this.$refs.emailInput.focus();
+                });
             },
             async submitInvite() {
                 this.loading = true;
