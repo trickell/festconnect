@@ -435,7 +435,27 @@
             postsContainer.innerHTML = '';
 
             if (!posts || posts.length === 0) {
-                postsContainer.innerHTML = '<p class="text-white text-center col-span-full opacity-70">No connections found.</p>';
+                postsContainer.innerHTML = `
+                    <div class="col-span-full py-20 text-center animate-fade-in w-full">
+                        <div class="inline-block p-10 bg-white/5 border border-white/10 rounded-[2.5rem] backdrop-blur-md shadow-2xl relative overflow-hidden group max-w-lg w-full">
+                            <!-- Background Decor -->
+                            <div class="absolute -top-24 -right-24 w-48 h-48 bg-purple-600/10 blur-3xl rounded-full transition-transform duration-1000 group-hover:scale-150"></div>
+                            
+                            <div class="relative z-10 flex flex-col items-center">
+                                <div class="w-20 h-20 bg-purple-600/10 rounded-3xl flex items-center justify-center mb-6 border border-purple-500/20 animate-bounce-slow">
+                                    <svg class="w-10 h-10 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-3xl font-black italic uppercase tracking-tighter text-white mb-2">No posts exists at the moment</h3>
+                                <p class="text-gray-400 text-sm font-bold uppercase tracking-widest mb-8 max-w-xs mx-auto leading-relaxed">It looks like nobody has posted a connection for this festival yet.</p>
+                                <button onclick="switchToForm()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black uppercase tracking-[0.2rem] py-4 rounded-2xl shadow-xl shadow-purple-600/20 active:scale-95 transition-all duration-300 text-sm">
+                                    Be the first to post
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
                 return;
             }
 
