@@ -15,7 +15,7 @@ $(function () {
     }
 
     // Handle the submission of registration or login
-    $('form').on("submit", function (e) {
+    $('#form_login, #form_register').on("submit", function (e) {
         e.preventDefault();
         console.log($(this).serializeArray(), $(this).attr('id'));
 
