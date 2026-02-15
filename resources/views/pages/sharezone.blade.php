@@ -713,6 +713,29 @@
             const formData = new FormData(form);
             const url = editingPostId ? `/update_post/${editingPostId}` : '/submit_post';
 
+            // Resizing Logic
+            const imageInput = form.querySelector('input[type="file"]');
+            if (imageInput && imageInput.files.length > 0) {
+                // Clear existing files from formData to re-add resized ones
+                formData.delete('optConnectImg[]');
+
+                // If the input doesn't use [], check for that too
+                if (!formData.has('optConnectImg[]')) {
+                    formData.delete('optConnectImg');
+                }
+
+                for (let i = 0; i < imageInput.files.length; i++) {
+                    try {
+                        const resizedBlob = await window.resizeImage(imageInput.files[i]);
+                        formData.append('optConnectImg[]', resizedBlob, imageInput.files[i].name);
+                    } catch (err) {
+                        console.error("Resizing failed for file:", imageInput.files[i].name, err);
+                        // Fallback: append original file if resizing fails
+                        formData.append('optConnectImg[]', imageInput.files[i]);
+                    }
+                }
+            }
+
             try {
                 const res = await fetch(url, {
                     method: 'POST',
