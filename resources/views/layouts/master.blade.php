@@ -39,6 +39,7 @@
             @include('includes.footer')
         </footer>
     </div>
+    @include('includes.image-resizer')
 </body>
 
 </html>
