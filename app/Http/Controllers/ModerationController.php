@@ -51,7 +51,7 @@ class ModerationController extends BaseController
     public function get_users(Request $request)
     {
         $this->authorizeAdmin();
-        $users = User::orderBy('name', 'asc')->get();
+        $users = User::withCount('posts')->orderBy('name', 'asc')->get();
         return response()->json($users);
     }
 
@@ -190,19 +190,49 @@ class ModerationController extends BaseController
             ->orderBy('created_at', 'desc')
             ->get();
 
+        $invites = $invites->map(function ($invite) {
+            $isReferral = $invite->user_id && $invite->generator && $invite->generator->role !== 'admin';
+            return array_merge($invite->toArray(), [
+                'is_in_queue' => $invite->isInQueue(),
+                'is_referral' => $isReferral,
+                'is_available' => $invite->isAvailable(),
+                'generator_name' => $invite->generator ? $invite->generator->name : 'System'
+            ]);
+        });
+
         $active = $invites->where('is_active', true)->values();
         $inactive = $invites->where('is_active', false)->values();
+        $queued = $invites->where('is_in_queue', true)->values();
+        $available = $invites->where('is_available', true)->values();
 
         return response()->json([
             'invites' => $invites,
             'active' => $active,
             'inactive' => $inactive,
+            'queued' => $queued,
+            'available' => $available,
             'counts' => [
                 'active' => $active->count(),
                 'inactive' => $inactive->count(),
+                'queued' => $queued->count(),
+                'available' => $available->count(),
                 'total' => $invites->count()
             ]
         ]);
+    }
+
+    public function queueInvite(Request $request, $id)
+    {
+        $this->authorizeAdmin();
+        $invite = \App\Models\BetaInvite::findOrFail($id);
+
+        if ($invite->is_active) {
+            return response()->json(['status' => 'error', 'message' => 'Cannot queue an active code.']);
+        }
+
+        $invite->update(['queued_at' => now()]);
+
+        return response()->json(['status' => 'success', 'message' => 'Code marked as in-queue for 24 hours.']);
     }
 
     // --- Helpers ---

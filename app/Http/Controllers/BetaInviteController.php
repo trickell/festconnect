@@ -37,8 +37,20 @@ class BetaInviteController extends BaseController
 
         $invite = BetaInvite::where('is_active', false)
             ->where(function ($query) {
+                // Not in queue or queue expired
+                $query->whereNull('queued_at')
+                    ->orWhere('queued_at', '<=', now()->subDay());
+            })
+            ->where(function ($query) {
                 $query->whereNull('sent_at')
                     ->orWhere('sent_at', '<=', now()->subHour());
+            })
+            ->where(function ($query) {
+                // ONLY grab from admin role or system generated (null user_id)
+                $query->whereNull('user_id')
+                    ->orWhereHas('generator', function ($q) {
+                    $q->where('role', 'admin');
+                });
             })
             ->first();
 

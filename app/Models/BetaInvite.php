@@ -13,6 +13,7 @@ class BetaInvite extends Model
         'code',
         'email',
         'sent_at',
+        'queued_at',
         'activated_at',
         'is_active',
         'user_id',
@@ -31,7 +32,18 @@ class BetaInvite extends Model
 
     protected $casts = [
         'sent_at' => 'datetime',
+        'queued_at' => 'datetime',
         'activated_at' => 'datetime',
         'is_active' => 'boolean',
     ];
+
+    public function isInQueue()
+    {
+        return $this->queued_at && $this->queued_at->isAfter(now()->subDay()) && !$this->is_active;
+    }
+
+    public function isAvailable()
+    {
+        return !$this->is_active && !$this->isInQueue();
+    }
 }

@@ -63,7 +63,7 @@
                             <div class="flex items-center gap-4 flex-wrap">
                                 <span
                                     class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest 
-                                                                                {{ $ticket->status === 'open' ? 'bg-green-500/20 text-green-400' : ($ticket->status === 'resolved' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-400') }}">
+                                                                                            {{ $ticket->status === 'open' ? 'bg-green-500/20 text-green-400' : ($ticket->status === 'resolved' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-400') }}">
                                     {{ $ticket->status }}
                                 </span>
                                 <span
@@ -117,22 +117,83 @@
         <!-- Tab Content: User Management -->
         <div x-show="tab === 'users'" class="space-y-8 animate-fade-in-up" x-cloak>
             <div
-                class="flex justify-between items-center bg-purple-600/10 border border-purple-500/20 p-6 rounded-3xl mb-8">
-                <div>
-                    <h2 class="text-2xl font-bold text-purple-400">Total Community Members</h2>
-                    <p class="text-gray-500 text-xs uppercase tracking-widest mt-1">Manage, update, and secure user
-                        accounts</p>
+                class="flex flex-col md:flex-row justify-between items-center bg-purple-600/10 border border-purple-500/20 p-8 rounded-3xl mb-8 gap-6">
+                <div class="flex-grow">
+                    <h2 class="text-3xl font-black text-purple-400 italic italic">Community Directory</h2>
+                    <p class="text-gray-500 text-[10px] uppercase tracking-[0.2em] font-bold mt-1">
+                        <span class="text-white" x-text="filteredUsers.length">0</span> Active Members Found
+                    </p>
                 </div>
-                <button onclick="openUserModal()"
-                    class="bg-purple-600 hover:bg-purple-500 px-8 py-3 rounded-2xl font-black uppercase tracking-widest transition text-xs flex items-center gap-2 shadow-lg shadow-purple-500/20">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg> Add New User
-                </button>
+                <div class="flex flex-wrap gap-4 items-center">
+                    <div class="relative group">
+                        <input type="text" x-model="userSearch" placeholder="Search name or email..."
+                            class="bg-black/40 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-purple-500 transition-all w-64 group-hover:border-white/20">
+                        <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none opacity-40">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <select x-model="userSort"
+                        class="bg-black/40 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:outline-none focus:border-purple-500 transition-all">
+                        <option value="name_asc">Name (A-Z)</option>
+                        <option value="name_desc">Name (Z-A)</option>
+                        <option value="posts_desc">Most Posts</option>
+                        <option value="role">By Role</option>
+                    </select>
+                    <button onclick="openUserModal()"
+                        class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 px-8 py-3 rounded-2xl font-black uppercase tracking-widest transition text-xs flex items-center gap-2 shadow-lg shadow-purple-500/20">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg> Add User
+                    </button>
+                </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="users_container">
-                <!-- Loaded via JS -->
+                <template x-for="user in filteredUsers" :key="user.id">
+                    <div
+                        class="bg-white/5 border border-white/10 rounded-3xl p-6 hover:border-purple-500/30 transition group relative overflow-hidden shadow-xl">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center font-black text-xl text-white shadow-inner transform group-hover:rotate-6 transition duration-300"
+                                x-text="user.name.charAt(0).toUpperCase()"></div>
+                            <div class="flex-grow">
+                                <a :href="'/profile/' + user.name" target="_blank"
+                                    class="font-black text-lg text-white group-hover:text-purple-400 transition block leading-tight tracking-tight"
+                                    x-text="user.name"></a>
+                                <p class="text-[10px] text-gray-500 font-mono tracking-tighter" x-text="user.email"></p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between mb-5">
+                            <span
+                                :class="user.role === 'admin' ? 'bg-red-500/20 text-red-400 border-red-500/20' : (user.role === 'moderator' ? 'bg-purple-500/20 text-purple-400 border-purple-500/20' : 'bg-gray-500/20 text-gray-400 border-white/5')"
+                                class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border"
+                                x-text="user.role"></span>
+
+                            <div
+                                class="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-xl border border-white/5">
+                                <span class="text-white font-black text-xs" x-text="user.posts_count || 0"></span>
+                                <span class="text-[8px] text-gray-500 uppercase font-black tracking-widest">Posts</span>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-2">
+                            <button @click="editUser(user.id, user.name, user.email, user.role)"
+                                class="flex-1 bg-white/5 hover:bg-purple-600/20 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest text-gray-400 hover:text-purple-400 border border-white/5 transition">Management</button>
+                            <template x-if="user.name !== 'systemadmin'">
+                                <button @click="deleteUser(user.id)"
+                                    class="bg-red-500/10 hover:bg-red-500/30 p-3 rounded-xl text-red-500 transition border border-red-500/10 hover:border-red-500/30">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                </template>
             </div>
         </div>
 
@@ -199,7 +260,7 @@
                     class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl relative overflow-hidden group">
                     <div class="absolute -top-12 -right-12 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl"></div>
                     <h3 class="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Available Codes</h3>
-                    <p class="text-4xl font-black text-amber-500 italic" x-text="inviteData.counts.inactive || 0"></p>
+                    <p class="text-4xl font-black text-amber-500 italic" x-text="inviteData.counts.available || 0"></p>
                 </div>
                 <div
                     class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl relative overflow-hidden group">
@@ -217,6 +278,21 @@
                 </div>
             </div>
 
+            <div class="flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
+                <div class="flex flex-wrap gap-4">
+                    <button @click="inviteFilter = 'all'"
+                        :class="inviteFilter === 'all' ? 'bg-amber-500/20 text-amber-400 border-amber-500/50' : 'bg-white/5 text-gray-400 border-white/5'"
+                        class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition">All
+                        Codes</button>
+                    <button @click="inviteFilter = 'admin'"
+                        :class="inviteFilter === 'admin' ? 'bg-amber-500/20 text-amber-400 border-amber-500/50' : 'bg-white/5 text-gray-400 border-white/5'"
+                        class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition">System/Admin</button>
+                    <button @click="inviteFilter = 'referral'"
+                        :class="inviteFilter === 'referral' ? 'bg-amber-500/20 text-amber-400 border-amber-500/50' : 'bg-white/5 text-gray-400 border-white/5'"
+                        class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition">Referrals</button>
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <!-- Available / Inactive List -->
                 <div class="space-y-6">
@@ -226,25 +302,38 @@
                     </h3>
                     <div class="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar"
                         id="inactive_invites_container">
-                        <template x-for="invite in inviteData.inactive" :key="invite.id">
-                            <div
-                                class="bg-white/5 border border-white/10 rounded-2xl p-4 flex justify-between items-center group hover:border-amber-500/30 transition-colors">
+                        <template x-for="invite in filteredInactive" :key="invite.id">
+                            <div :class="invite.is_referral ? 'opacity-40 grayscale pointer-events-none' : ''"
+                                class="bg-white/5 border border-white/10 rounded-2xl p-4 flex justify-between items-center group hover:border-amber-500/30 transition-all">
                                 <div>
-                                    <p class="text-lg font-mono font-black text-white tracking-widest"
-                                        x-text="invite.code"></p>
+                                    <div class="flex items-center gap-2">
+                                        <p class="text-lg font-mono font-black text-white tracking-widest"
+                                            x-text="invite.code"></p>
+                                        <template x-if="invite.is_in_queue">
+                                            <span
+                                                class="px-2 py-0.5 rounded bg-amber-500 text-black text-[8px] font-black uppercase tracking-tighter">In
+                                                Queue</span>
+                                        </template>
+                                    </div>
                                     <p class="text-[9px] text-gray-500 uppercase font-bold tracking-widest mt-1">
-                                        Gen by <span class="text-gray-300"
-                                            x-text="invite.generator ? invite.generator.name : 'System'"></span> •
+                                        Gen by <span class="text-gray-300" x-text="invite.generator_name"></span> •
                                         <span x-text="new Date(invite.created_at).toLocaleDateString()"></span>
+                                        <template x-if="invite.is_in_queue">
+                                            <span class="text-amber-500/80 italic ml-2">(Expires in <span
+                                                    x-text="getTimeRemaining(invite.queued_at)"></span>)</span>
+                                        </template>
                                     </p>
                                 </div>
-                                <button @click="navigator.clipboard.writeText(invite.code); alert('Copied!')"
-                                    class="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                                    </svg>
-                                </button>
+                                <div class="flex gap-2">
+                                    <button @click="copyCode(invite)" :disabled="invite.is_in_queue"
+                                        :class="invite.is_in_queue ? 'opacity-20 cursor-not-allowed' : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white'"
+                                        class="p-2 rounded-lg transition">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
                         </template>
                     </div>
@@ -427,7 +516,11 @@
     document.addEventListener('alpine:init', () => {
         Alpine.data('adminDashboard', () => ({
             tab: 'tickets',
+            inviteFilter: 'all',
             inviteData: { active: [], inactive: [], counts: { active: 0, inactive: 0, total: 0 } },
+            users: [],
+            userSearch: '',
+            userSort: 'name_asc',
             ...platformSettings(),
             async loadInvites() {
                 try {
@@ -436,44 +529,88 @@
                 } catch (e) {
                     console.error('Error loading invites');
                 }
+            },
+            get filteredInactive() {
+                if (this.inviteFilter === 'admin') return this.inviteData.inactive.filter(i => !i.is_referral);
+                if (this.inviteFilter === 'referral') return this.inviteData.inactive.filter(i => i.is_referral);
+                return this.inviteData.inactive;
+            },
+            async copyCode(invite) {
+                try {
+                    await navigator.clipboard.writeText(invite.code);
+                    const res = await fetch(`/admin/queue_invite/${invite.id}`, {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                    });
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        this.loadInvites();
+                        alert('Code copied and queued for 24h!');
+                    }
+                } catch (err) {
+                    alert('Failed to copy code.');
+                }
+            },
+            getTimeRemaining(queuedAt) {
+                const expiresAt = new Date(queuedAt).getTime() + (24 * 60 * 60 * 1000);
+                const diff = expiresAt - new Date().getTime();
+                if (diff <= 0) return 'Expired';
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                return `${hours}h ${mins}m`;
+            },
+            async loadUsers() {
+                try {
+                    const res = await fetch('/admin/users');
+                    this.users = await res.json();
+                } catch (e) {
+                    console.error('Error loading users');
+                }
+            },
+            get filteredUsers() {
+                let filtered = this.users.filter(u => 
+                    u.name.toLowerCase().includes(this.userSearch.toLowerCase()) || 
+                    u.email.toLowerCase().includes(this.userSearch.toLowerCase())
+                );
+                
+                if (this.userSort === 'name_asc') {
+                    filtered.sort((a, b) => a.name.localeCompare(b.name));
+                } else if (this.userSort === 'name_desc') {
+                    filtered.sort((a, b) => b.name.localeCompare(a.name));
+                } else if (this.userSort === 'posts_desc') {
+                    filtered.sort((a, b) => (b.posts_count || 0) - (a.posts_count || 0));
+                } else if (this.userSort === 'role') {
+                    const roleOrder = { admin: 1, moderator: 2, user: 3 };
+                    filtered.sort((a, b) => (roleOrder[a.role] || 4) - (roleOrder[b.role] || 4));
+                }
+                
+                return filtered;
+            },
+            editUser(id, name, email, role) {
+                document.getElementById('edit_user_id').value = id;
+                document.getElementById('user_form').querySelector('input[name="name"]').value = name;
+                document.getElementById('user_form').querySelector('input[name="email"]').value = email;
+                document.getElementById('user_form').querySelector('select[name="role"]').value = role;
+                document.getElementById('user_modal_title').innerText = `Edit: ${name}`;
+                document.getElementById('user_modal').classList.remove('hidden');
+            },
+            async deleteUser(id) {
+                if (!confirm("Warning: This will delete the user profile and all their data. Proceed?")) return;
+                const res = await fetch(`/admin/users/delete/${id}`, { 
+                    method: 'POST', 
+                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } 
+                });
+                const data = await res.json();
+                if (data.status === 'success') this.loadUsers(); else alert(data.message);
             }
         }));
     });
 </script>
 <script>
-    // --- User Management ---
-    async function loadUsers() {
-        const res = await fetch('/admin/users');
-        const users = await res.json();
-        const container = document.getElementById('users_container');
-        container.innerHTML = users.map(user => `
-            <div class="bg-white/5 border border-white/10 rounded-3xl p-6 hover:border-purple-500/30 transition group relative overflow-hidden">
-                <div class="flex items-center gap-4 mb-4">
-                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold text-lg uppercase">${user.name.charAt(0)}</div>
-                    <div><h4 class="font-bold text-white group-hover:text-purple-400 transition">${user.name}</h4><p class="text-[10px] text-gray-500 font-mono tracking-tighter">${user.email}</p></div>
-                </div>
-                <div class="flex items-center justify-between mb-4"><span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${user.role === 'admin' ? 'bg-indigo-500/20 text-indigo-400' : (user.role === 'moderator' ? 'bg-purple-500/20 text-purple-400' : 'bg-gray-500/20 text-gray-500')}">${user.role}</span></div>
-                <div class="flex gap-2">
-                    <button onclick="editUser(${user.id}, '${user.name}', '${user.email}', '${user.role}')" class="flex-1 bg-white/5 hover:bg-purple-600/20 py-2 rounded-xl text-[9px] font-bold uppercase tracking-widest text-gray-400 hover:text-purple-400 border border-white/5 transition">Edit Profile</button>
-                    ${user.name !== 'systemadmin' ? `<button onclick="deleteUser(${user.id})" class="bg-red-500/10 hover:bg-red-500/30 p-2 rounded-xl text-red-500 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>` : ''}
-                </div>
-            </div>
-        `).join('');
-    }
-
     function openUserModal() {
         document.getElementById('user_form').reset();
         document.getElementById('edit_user_id').value = '';
         document.getElementById('user_modal_title').innerText = "Add New User";
-        document.getElementById('user_modal').classList.remove('hidden');
-    }
-
-    function editUser(id, name, email, role) {
-        document.getElementById('edit_user_id').value = id;
-        document.getElementById('user_form').querySelector('input[name="name"]').value = name;
-        document.getElementById('user_form').querySelector('input[name="email"]').value = email;
-        document.getElementById('user_form').querySelector('select[name="role"]').value = role;
-        document.getElementById('user_modal_title').innerText = `Edit: ${name}`;
         document.getElementById('user_modal').classList.remove('hidden');
     }
 
@@ -487,16 +624,12 @@
         try {
             const res = await fetch(url, { method: 'POST', body: formData });
             const data = await res.json();
-            if (data.status === 'success') { loadUsers(); closeUserModal(); } else { alert(data.message); }
+            if (data.status === 'success') { 
+                // We need to trigger loadUsers on the Alpine component
+                window.location.reload(); // Simple refresh for now, or we could dispatch an event
+            } else { alert(data.message); }
         } catch (err) { alert("Error saving user"); }
     });
-
-    async function deleteUser(id) {
-        if (!confirm("Warning: This will delete the user profile and all their data. Proceed?")) return;
-        const res = await fetch(`/admin/users/delete/${id}`, { method: 'POST', headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } });
-        const data = await res.json();
-        if (data.status === 'success') loadUsers(); else alert(data.message);
-    }
 
     // --- Flag Management ---
     async function loadFlags() {
