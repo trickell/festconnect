@@ -125,6 +125,7 @@ Route::post('/mark_welcome_seen', [App\Http\Controllers\BetaInviteController::cl
 Route::post('/admin/toggle_registration', [App\Http\Controllers\ModerationController::class, 'toggleRegistration']);
 Route::post('/admin/generate_invites', [App\Http\Controllers\ModerationController::class, 'generateMoreInvites']);
 Route::get('/admin/get_invites', [App\Http\Controllers\ModerationController::class, 'get_all_invites']);
+Route::post('/admin/queue_invite/{id}', [App\Http\Controllers\ModerationController::class, 'queueInvite']);
 
 // Route::get('/create_comment', function(){
 //     try {
