@@ -1,0 +1,1 @@
+Route::post('/admin/update_personal_links', [App\Http\Controllers\LiveStreamController::class, 'updatePersonalLinks']);

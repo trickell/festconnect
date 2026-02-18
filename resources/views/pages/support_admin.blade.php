@@ -63,7 +63,7 @@
                             <div class="flex items-center gap-4 flex-wrap">
                                 <span
                                     class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest 
-                                                                                            {{ $ticket->status === 'open' ? 'bg-green-500/20 text-green-400' : ($ticket->status === 'resolved' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-400') }}">
+                                                                                                    {{ $ticket->status === 'open' ? 'bg-green-500/20 text-green-400' : ($ticket->status === 'resolved' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-400') }}">
                                     {{ $ticket->status }}
                                 </span>
                                 <span
@@ -172,15 +172,23 @@
                                 class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border"
                                 x-text="user.role"></span>
 
-                            <div
-                                class="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-xl border border-white/5">
-                                <span class="text-white font-black text-xs" x-text="user.posts_count || 0"></span>
-                                <span class="text-[8px] text-gray-500 uppercase font-black tracking-widest">Posts</span>
+                            <div class="flex flex-col items-end gap-2">
+                                <template x-if="user.is_special_guest">
+                                    <span
+                                        class="px-2 py-0.5 rounded bg-pink-500/20 text-pink-500 text-[8px] font-black uppercase tracking-tighter border border-pink-500/20">Special
+                                        Guest</span>
+                                </template>
+                                <div
+                                    class="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-xl border border-white/5">
+                                    <span class="text-white font-black text-xs" x-text="user.posts_count || 0"></span>
+                                    <span
+                                        class="text-[8px] text-gray-500 uppercase font-black tracking-widest">Posts</span>
+                                </div>
                             </div>
                         </div>
 
                         <div class="flex gap-2">
-                            <button @click="editUser(user.id, user.name, user.email, user.role)"
+                            <button @click="editUser(user.id, user.name, user.email, user.role, user.is_special_guest)"
                                 class="flex-1 bg-white/5 hover:bg-purple-600/20 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest text-gray-400 hover:text-purple-400 border border-white/5 transition">Management</button>
                             <template x-if="user.name !== 'systemadmin'">
                                 <button @click="deleteUser(user.id)"
@@ -428,6 +436,19 @@
                         class="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-purple-500 outline-none">
                 </div>
             </div>
+            <div class="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between">
+                <div>
+                    <h4 class="text-sm font-bold text-white uppercase tracking-widest">Special Guest Status</h4>
+                    <p class="text-[9px] text-gray-500">Designate this user as a Live Streamer</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="is_special_guest" id="is_special_guest_checkbox" value="1"
+                        class="sr-only peer">
+                    <div
+                        class="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600">
+                    </div>
+                </label>
+            </div>
             <div class="flex gap-4 mt-6">
                 <button type="submit"
                     class="flex-1 bg-purple-600 hover:bg-purple-500 py-4 rounded-2xl font-black uppercase tracking-widest transition text-sm shadow-xl">Save
@@ -568,11 +589,11 @@
                 }
             },
             get filteredUsers() {
-                let filtered = this.users.filter(u => 
-                    u.name.toLowerCase().includes(this.userSearch.toLowerCase()) || 
+                let filtered = this.users.filter(u =>
+                    u.name.toLowerCase().includes(this.userSearch.toLowerCase()) ||
                     u.email.toLowerCase().includes(this.userSearch.toLowerCase())
                 );
-                
+
                 if (this.userSort === 'name_asc') {
                     filtered.sort((a, b) => a.name.localeCompare(b.name));
                 } else if (this.userSort === 'name_desc') {
@@ -583,22 +604,23 @@
                     const roleOrder = { admin: 1, moderator: 2, user: 3 };
                     filtered.sort((a, b) => (roleOrder[a.role] || 4) - (roleOrder[b.role] || 4));
                 }
-                
+
                 return filtered;
             },
-            editUser(id, name, email, role) {
+            editUser(id, name, email, role, isGuest) {
                 document.getElementById('edit_user_id').value = id;
                 document.getElementById('user_form').querySelector('input[name="name"]').value = name;
                 document.getElementById('user_form').querySelector('input[name="email"]').value = email;
                 document.getElementById('user_form').querySelector('select[name="role"]').value = role;
+                document.getElementById('is_special_guest_checkbox').checked = !!isGuest;
                 document.getElementById('user_modal_title').innerText = `Edit: ${name}`;
                 document.getElementById('user_modal').classList.remove('hidden');
             },
             async deleteUser(id) {
                 if (!confirm("Warning: This will delete the user profile and all their data. Proceed?")) return;
-                const res = await fetch(`/admin/users/delete/${id}`, { 
-                    method: 'POST', 
-                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } 
+                const res = await fetch(`/admin/users/delete/${id}`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
                 });
                 const data = await res.json();
                 if (data.status === 'success') this.loadUsers(); else alert(data.message);
@@ -624,7 +646,7 @@
         try {
             const res = await fetch(url, { method: 'POST', body: formData });
             const data = await res.json();
-            if (data.status === 'success') { 
+            if (data.status === 'success') {
                 // We need to trigger loadUsers on the Alpine component
                 window.location.reload(); // Simple refresh for now, or we could dispatch an event
             } else { alert(data.message); }

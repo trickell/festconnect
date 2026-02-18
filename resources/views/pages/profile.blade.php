@@ -112,6 +112,105 @@
     init() {
         this.fetchThreads();
         setInterval(() => this.fetchThreads(), 10000);
+        this.fetchScheduledStreams();
+    },
+    scheduledStreams: [],
+    streamColor: '{{ $user->stream_chat_color ?? "#ec4899" }}',
+    async fetchScheduledStreams() {
+        if (!{{ $user->is_special_guest ? 'true' : 'false' }} && '{{ $user->role }}' !== 'admin') return;
+        try {
+            const res = await fetch('/admin/get_my_streams');
+            this.scheduledStreams = await res.json();
+        } catch (e) {}
+    },
+    async updateStreamColor() {
+        try {
+            await fetch('/admin/update_chat_color', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ color: this.streamColor })
+            });
+            alert('Chat color updated!');
+        } catch (e) { alert('Error updating color'); }
+    },
+    async scheduleStream() {
+        const time = document.getElementById('schedule_time').value;
+        if (!time) return;
+        try {
+            const res = await fetch('/admin/schedule_stream', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}' 
+                },
+                body: JSON.stringify({ scheduled_at: time })
+            });
+            const data = await res.json();
+            if (res.ok && data.status === 'success') {
+                alert('Stream scheduled!');
+                window.location.reload();
+            } else { 
+                alert(data.message || 'Error scheduling stream. Please check if the slot is taken or time is in the past.'); 
+            }
+        } catch (e) { 
+            console.error('Schedule error:', e);
+            alert('Scheduling failed. Error: ' + e.message); 
+        }
+    },
+    async startLive(id) {
+        try {
+            const res = await fetch('/admin/start_stream/' + id, {
+                method: 'POST',
+                headers: { 
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}' 
+                }
+            });
+            const data = await res.json();
+            if (res.ok && data.status === 'success') {
+                alert('You are LIVE!');
+                window.location.href = '/share_zone?tab=live';
+            } else {
+                alert(data.message || 'Error starting live');
+            }
+        } catch (e) { alert('Error starting live'); }
+    },
+    async endLive(id) {
+        if(!confirm('End this live stream?')) return;
+        try {
+            const res = await fetch('/admin/end_stream/' + id, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                alert('Stream ended.');
+                window.location.reload();
+            }
+        } catch (e) { alert('Error ending stream'); }
+    },
+    async updatePersonalLinks() {
+        const links = [];
+        for (let i = 0; i < 3; i++) {
+            const name = document.getElementById('link_name_' + i).value.trim();
+            const url = document.getElementById('link_url_' + i).value.trim();
+            if (url) {
+                links.push({ name: name || url, url: url });
+            }
+        }
+        try {
+            const res = await fetch('/admin/update_personal_links', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ links: links })
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                alert('Personal links updated!');
+                window.location.reload();
+            }
+        } catch (e) { alert('Error updating links'); }
     }
 }" @refresh-threads.window="fetchThreads()" class="relative min-h-screen py-24 bg-black text-white overflow-hidden">
     <!-- Video Background -->
@@ -281,6 +380,15 @@
                     <button @click="tab = 'penalties'"
                         :class="tab === 'penalties' ? 'bg-red-600 text-white shadow-lg shadow-red-500/20' : 'bg-white/5 text-gray-400 hover:bg-white/10'"
                         class="px-8 py-3 rounded-2xl font-black uppercase tracking-widest transition text-xs">Penalties</button>
+
+                    @if($user->is_special_guest || (optional($viewer)->role === 'admin' && $isOwner))
+                        <button @click="tab = 'stream'"
+                            :class="tab === 'stream' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-white/5 text-gray-400 hover:bg-white/10'"
+                            class="px-8 py-3 rounded-2xl font-black uppercase tracking-widest transition text-xs flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                            Stream Center
+                        </button>
+                    @endif
                 </div>
             @endif
 
@@ -413,24 +521,25 @@
                                                     <div class="absolute inset-2 bg-white/5 rounded-lg overflow-hidden flex items-center"
                                                         @mousedown="isDragging = true"
                                                         @touchstart.passive="isDragging = true" @mousemove.window="if(isDragging) { 
-                                                                        let rect = $el.getBoundingClientRect();
-                                                                        let x = $event.clientX - rect.left;
-                                                                        sliderProgress = Math.max(0, Math.min(100, (x / rect.width) * 100));
-                                                                        if(sliderProgress >= 90) { 
-                                                                            passwordUnlocked = true; 
-                                                                            isDragging = false;
-                                                                            $nextTick(() => { $refs.passwordInput.focus(); });
-                                                                        }
-                                                                    }" @touchmove.window.passive="if(isDragging) {
-                                                                        let rect = $el.getBoundingClientRect();
-                                                                        let x = $event.touches[0].clientX - rect.left;
-                                                                        sliderProgress = Math.max(0, Math.min(100, (x / rect.width) * 100));
-                                                                        if(sliderProgress >= 90) { 
-                                                                            passwordUnlocked = true; 
-                                                                            isDragging = false;
-                                                                            $nextTick(() => { $refs.passwordInput.focus(); });
-                                                                        }
-                                                                    }"
+                                                                                                    let rect = $el.getBoundingClientRect();
+                                                                                                    let x = $event.clientX - rect.left;
+                                                                                                    sliderProgress = Math.max(0, Math.min(100, (x / rect.width) * 100));
+                                                                                                    if(sliderProgress >= 90) { 
+                                                                                                        passwordUnlocked = true; 
+                                                                                                        isDragging = false;
+                                                                                                        $nextTick(() => { $refs.passwordInput.focus(); });
+                                                                                                    }
+                                                                                                }"
+                                                        @touchmove.window.passive="if(isDragging) {
+                                                                                                    let rect = $el.getBoundingClientRect();
+                                                                                                    let x = $event.touches[0].clientX - rect.left;
+                                                                                                    sliderProgress = Math.max(0, Math.min(100, (x / rect.width) * 100));
+                                                                                                    if(sliderProgress >= 90) { 
+                                                                                                        passwordUnlocked = true; 
+                                                                                                        isDragging = false;
+                                                                                                        $nextTick(() => { $refs.passwordInput.focus(); });
+                                                                                                    }
+                                                                                                }"
                                                         @mouseup.window="if(isDragging && sliderProgress < 90) { sliderProgress = 0; isDragging = false; }"
                                                         @touchend.window="if(isDragging && sliderProgress < 90) { sliderProgress = 0; isDragging = false; }">
 
@@ -579,71 +688,72 @@
 
             <!-- Manage Posts Section -->
             @if($isOwner)
-                <div x-show="tab === 'posts'" x-cloak class="animate-fade-in-up space-y-6" x-data="{ 
-                                                                                                            posts: @js($user->posts->map(fn($p) => [
-                                                                                                                'id' => $p->id,
-                                                                                                                'category' => $p->category ?? 'Chat',
-                                                                                                                'post' => $p->post,
-                                                                                                                'created_at' => $p->created_at->toDateTimeString(),
-                                                                                                                'updated_at' => $p->updated_at->toDateTimeString(),
-                                                                                                                'diff' => $p->created_at->diffForHumans(),
-                                                                                                                'updated_diff' => $p->updated_at->diffForHumans(),
-                                                                                                                'is_updated' => $p->created_at != $p->updated_at,
-                                                                                                                'images' => $p->images ?? []
-                                                                                                            ])),
-                                                                                                            sortBy: 'newest',
-                                                                                                            editingId: null,
-                                                                                                            editContent: '',
-                                                                                                            get sortedPosts() {
-                                                                                                                let sorted = [...this.posts];
-                                                                                                                if (this.sortBy === 'newest') {
-                                                                                                                    return sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-                                                                                                                } else if (this.sortBy === 'oldest') {
-                                                                                                                    return sorted.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-                                                                                                                } else if (this.sortBy === 'type') {
-                                                                                                                    return sorted.sort((a, b) => a.category.localeCompare(b.category));
-                                                                                                                }
-                                                                                                                return sorted;
-                                                                                                            },
-                                                                                                            async savePost(id) {
-                                                                                                                try {
-                                                                                                                    const res = await fetch('/update_post/' + id, {
-                                                                                                                        method: 'POST',
-                                                                                                                        headers: { 
-                                                                                                                            'Content-Type': 'application/json',
-                                                                                                                            'X-CSRF-TOKEN': '{{ csrf_token() }}' 
-                                                                                                                        },
-                                                                                                                        body: JSON.stringify({ post: this.editContent })
-                                                                                                                    });
-                                                                                                                    const data = await res.json();
-                                                                                                                    if (data.status === 'success') {
-                                                                                                                        const idx = this.posts.findIndex(p => p.id === id);
-                                                                                                                        this.posts[idx].post = data.post.post;
-                                                                                                                        this.posts[idx].updated_at = data.post.updated_at;
-                                                                                                                        this.posts[idx].updated_diff = 'just now';
-                                                                                                                        this.posts[idx].is_updated = true;
-                                                                                                                        this.editingId = null;
-                                                                                                                    } else {
-                                                                                                                        alert(data.message);
-                                                                                                                    }
-                                                                                                                } catch (e) { alert('Error saving'); }
-                                                                                                            },
-                                                                                                            async deletePost(id) {
-                                                                                                                if (!confirm('Are you sure you want to PERMANENTLY delete this post? This cannot be undone.')) return;
-                                                                                                                try {
-                                                                                                                    const res = await fetch('/delete_post/' + id, {
-                                                                                                                        method: 'POST',
-                                                                                                                        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
-                                                                                                                    });
-                                                                                                                    const data = await res.json();
-                                                                                                                    if (data.status === 'success') {
-                                                                                                                        this.posts = this.posts.filter(p => p.id !== id);
-                                                                                                                    } else {
-                                                                                                                        alert(data.message);
-                                                                                                                    }
-                                                                                                                } catch (e) { alert('Error deleting'); }
-                                                                                                            }
-                                                                                                        }">
+                <div x-show="tab === 'posts'" x-cloak class="animate-fade-in-up space-y-6"
+                    x-data="{ 
+                                                                                                                                        posts: @js($user->posts->map(fn($p) => [
+                                                                                                                                            'id' => $p->id,
+                                                                                                                                            'category' => $p->category ?? 'Chat',
+                                                                                                                                            'post' => $p->post,
+                                                                                                                                            'created_at' => $p->created_at->toDateTimeString(),
+                                                                                                                                            'updated_at' => $p->updated_at->toDateTimeString(),
+                                                                                                                                            'diff' => $p->created_at->diffForHumans(),
+                                                                                                                                            'updated_diff' => $p->updated_at->diffForHumans(),
+                                                                                                                                            'is_updated' => $p->created_at != $p->updated_at,
+                                                                                                                                            'images' => $p->images ?? []
+                                                                                                                                        ])),
+                                                                                                                                        sortBy: 'newest',
+                                                                                                                                        editingId: null,
+                                                                                                                                        editContent: '',
+                                                                                                                                        get sortedPosts() {
+                                                                                                                                            let sorted = [...this.posts];
+                                                                                                                                            if (this.sortBy === 'newest') {
+                                                                                                                                                return sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                                                                                                                                            } else if (this.sortBy === 'oldest') {
+                                                                                                                                                return sorted.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                                                                                                                                            } else if (this.sortBy === 'type') {
+                                                                                                                                                return sorted.sort((a, b) => a.category.localeCompare(b.category));
+                                                                                                                                            }
+                                                                                                                                            return sorted;
+                                                                                                                                        },
+                                                                                                                                        async savePost(id) {
+                                                                                                                                            try {
+                                                                                                                                                const res = await fetch('/update_post/' + id, {
+                                                                                                                                                    method: 'POST',
+                                                                                                                                                    headers: { 
+                                                                                                                                                        'Content-Type': 'application/json',
+                                                                                                                                                        'X-CSRF-TOKEN': '{{ csrf_token() }}' 
+                                                                                                                                                    },
+                                                                                                                                                    body: JSON.stringify({ post: this.editContent })
+                                                                                                                                                });
+                                                                                                                                                const data = await res.json();
+                                                                                                                                                if (data.status === 'success') {
+                                                                                                                                                    const idx = this.posts.findIndex(p => p.id === id);
+                                                                                                                                                    this.posts[idx].post = data.post.post;
+                                                                                                                                                    this.posts[idx].updated_at = data.post.updated_at;
+                                                                                                                                                    this.posts[idx].updated_diff = 'just now';
+                                                                                                                                                    this.posts[idx].is_updated = true;
+                                                                                                                                                    this.editingId = null;
+                                                                                                                                                } else {
+                                                                                                                                                    alert(data.message);
+                                                                                                                                                }
+                                                                                                                                            } catch (e) { alert('Error saving'); }
+                                                                                                                                        },
+                                                                                                                                        async deletePost(id) {
+                                                                                                                                            if (!confirm('Are you sure you want to PERMANENTLY delete this post? This cannot be undone.')) return;
+                                                                                                                                            try {
+                                                                                                                                                const res = await fetch('/delete_post/' + id, {
+                                                                                                                                                    method: 'POST',
+                                                                                                                                                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                                                                                                                                                });
+                                                                                                                                                const data = await res.json();
+                                                                                                                                                if (data.status === 'success') {
+                                                                                                                                                    this.posts = this.posts.filter(p => p.id !== id);
+                                                                                                                                                } else {
+                                                                                                                                                    alert(data.message);
+                                                                                                                                                }
+                                                                                                                                            } catch (e) { alert('Error deleting'); }
+                                                                                                                                        }
+                                                                                                                                    }">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                         <h2 class="text-2xl font-black italic uppercase tracking-tighter text-pink-400">My Activity</h2>
                         <div class="flex items-center gap-3 bg-white/5 p-2 rounded-2xl border border-white/10">
@@ -794,6 +904,145 @@
                                 Clear record. Stay legendary.
                             </div>
                         @endforelse
+                    </div>
+                </div>
+            @endif
+            <!-- Stream Center Tab -->
+            @if($user->is_special_guest || (optional($viewer)->role === 'admin' && $isOwner))
+                <div x-show="tab === 'stream'" x-cloak class="animate-fade-in-up space-y-8">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Stream Settings -->
+                        <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
+                            <h3
+                                class="text-xl font-bold uppercase tracking-widest mb-6 text-indigo-400 flex items-center gap-3">
+                                <span class="w-2 h-2 bg-indigo-400 rounded-full"></span> Stream Persona
+                            </h3>
+                            <div class="space-y-6">
+                                <div>
+                                    <label
+                                        class="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Live
+                                        Chat Font Color</label>
+                                    <div class="flex items-center gap-4">
+                                        <input type="color" x-model="streamColor"
+                                            class="w-12 h-12 bg-transparent border-0 rounded-xl cursor-pointer">
+                                        <div class="flex-1 p-4 bg-black/40 rounded-2xl border border-white/5">
+                                            <p class="text-sm font-bold" :style="'color: ' + streamColor">This is how your
+                                                name will appear in live chat.</p>
+                                        </div>
+                                    </div>
+                                    <button @click="updateStreamColor()"
+                                        class="mt-4 w-full bg-white/5 hover:bg-indigo-600/20 py-3 rounded-xl border border-white/10 text-[10px] font-black uppercase tracking-widest transition">Update
+                                        Color</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Schedule Stream -->
+                        <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
+                            <h3
+                                class="text-xl font-bold uppercase tracking-widest mb-6 text-purple-400 flex items-center gap-3">
+                                <span class="w-2 h-2 bg-purple-400 rounded-full"></span> Book a Live Slot
+                            </h3>
+                            <div class="space-y-4">
+                                <p class="text-xs text-gray-400 leading-relaxed">Select a date and time for your next live
+                                    appearance. Only one guest can stream at a time.</p>
+                                <input type="datetime-local" id="schedule_time"
+                                    class="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-purple-500 transition">
+                                <button @click="scheduleStream()"
+                                    class="w-full bg-purple-600 hover:bg-purple-500 py-4 rounded-2xl font-black uppercase tracking-widest transition shadow-lg">Schedule
+                                    Stream</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Personal Links Section -->
+                    <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
+                        <h3 class="text-xl font-bold uppercase tracking-widest mb-6 text-pink-400 flex items-center gap-3">
+                            <span class="w-2 h-2 bg-pink-400 rounded-full"></span> Personal Links
+                        </h3>
+                        <div class="space-y-4">
+                            <p class="text-xs text-gray-400 leading-relaxed">Add up to 3 personal links that will appear
+                                under your live stream.</p>
+                            @php
+                                $personalLinks = $user->personal_links ?? [];
+                                // Ensure we always have 3 slots
+                                for ($i = count($personalLinks); $i < 3; $i++) {
+                                    $personalLinks[] = ['name' => '', 'url' => ''];
+                                }
+                            @endphp
+                            @foreach($personalLinks as $index => $link)
+                                <div class="space-y-2">
+                                    <label class="block text-[9px] font-black uppercase tracking-widest text-gray-500">Link
+                                        {{ $index + 1 }}</label>
+                                    <input type="text" id="link_name_{{ $index }}" value="{{ $link['name'] ?? '' }}"
+                                        placeholder="Link Name (optional)"
+                                        class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-pink-500 transition mb-2">
+                                    <input type="url" id="link_url_{{ $index }}" value="{{ $link['url'] ?? '' }}"
+                                        placeholder="https://example.com"
+                                        class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-pink-500 transition">
+                                </div>
+                            @endforeach
+                            <button @click="updatePersonalLinks()"
+                                class="w-full bg-pink-600 hover:bg-pink-500 py-4 rounded-2xl font-black uppercase tracking-widest transition shadow-lg">Save
+                                Links</button>
+                        </div>
+                    </div>
+
+                    <!-- My Scheduled Streams -->
+                    <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
+                        <h3 class="text-xl font-bold uppercase tracking-widest mb-6 text-white flex items-center gap-3">
+                            <span class="w-2 h-2 bg-white rounded-full"></span> My Live Schedule
+                        </h3>
+                        <div class="space-y-4">
+                            @php
+                                $myStreams = \App\Models\LiveStream::where('user_id', $user->id)
+                                    ->where('status', '!=', 'ended')
+                                    ->orderBy('scheduled_at', 'asc')
+                                    ->get();
+                            @endphp
+                            @forelse($myStreams as $stream)
+                                <div
+                                    class="p-6 bg-black/40 border border-white/5 rounded-2xl flex justify-between items-center group hover:border-indigo-500/30 transition-all">
+                                    <div>
+                                        <p class="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-1">
+                                            Scheduled For</p>
+                                        <p class="text-lg font-bold text-white">
+                                            {{ \Carbon\Carbon::parse($stream->scheduled_at)->format('l, M j @ g:i A') }}
+                                        </p>
+                                        <span
+                                            class="inline-block mt-2 px-2 py-0.5 rounded bg-amber-500/20 text-amber-500 text-[8px] font-black uppercase tracking-widest">{{ $stream->status }}</span>
+                                    </div>
+                                    <div class="flex gap-3">
+                                        @if($stream->status === 'scheduled')
+                                            @php
+                                                $startTime = \Carbon\Carbon::parse($stream->scheduled_at);
+                                                $canGoLive = now()->addMinutes(30)->gte($startTime);
+                                            @endphp
+                                            <div class="flex flex-col items-end gap-2">
+                                                <button @click="startLive({{ $stream->id }})" @if(!$canGoLive) disabled @endif
+                                                    :class="!{{ $canGoLive ? 'true' : 'false' }} ? 'opacity-30 cursor-not-allowed bg-gray-600' : 'bg-green-600 hover:bg-green-500'"
+                                                    class="px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition shadow-lg text-white">
+                                                    {{ $canGoLive ? 'Go Live Now' : 'Stream Locked' }}
+                                                </button>
+                                                @if(!$canGoLive)
+                                                    <p class="text-[8px] text-gray-500 font-bold uppercase tracking-widest">Unlocks 30m
+                                                        before start</p>
+                                                @endif
+                                            </div>
+                                        @elseif($stream->status === 'live')
+                                            <button @click="endLive({{ $stream->id }})"
+                                                class="bg-red-600 hover:bg-red-500 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition shadow-lg">End
+                                                Stream</button>
+                                        @endif
+                                    </div>
+                                </div>
+                            @empty
+                                <div
+                                    class="py-12 text-center bg-black/20 rounded-2xl border border-dashed border-white/5 italic text-gray-500 text-sm uppercase tracking-widest font-bold">
+                                    No live appearances scheduled.
+                                </div>
+                            @endforelse
+                        </div>
                     </div>
                 </div>
             @endif

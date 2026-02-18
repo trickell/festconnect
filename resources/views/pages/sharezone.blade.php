@@ -3,7 +3,7 @@
 @section('title', 'Fest Connection || Festival Share Zone')
 
 @section('content')
-<div class="relative min-h-screen flex flex-col pt-20 overflow-hidden bg-black text-white">
+<div x-data="shareZone" class="relative min-h-screen flex flex-col pt-20 overflow-hidden bg-black text-white">
     <!-- Video Background -->
     <x-video-background source="img/video/missedconn_bg.mp4" />
 
@@ -161,6 +161,30 @@
                 </div>
             </div>
 
+            <!-- Tab Navigation -->
+            <div class="flex bg-white/5 p-1.5 rounded-2xl border border-white/10">
+                <button @click="activeTab = 'posts'"
+                    :class="activeTab === 'posts' ? 'bg-pink-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'"
+                    class="px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition">Posts</button>
+                <button @click="activeTab = 'live'"
+                    :class="activeTab === 'live' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'"
+                    class="px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition flex items-center gap-2 group/tab relative">
+                    <span class="w-2 h-2 rounded-full bg-red-500" :class="liveStream ? 'animate-pulse' : ''"></span>
+                    <span x-show="!liveStream || activeTab === 'live'">Live Room</span>
+                    <span x-show="liveStream && activeTab !== 'live'"
+                        class="absolute inset-0 flex items-center justify-center bg-indigo-600 rounded-xl opacity-0 group-hover/tab:opacity-100 transition-opacity">
+                        <span class="text-[10px] animate-pulse">LIVE</span>
+                    </span>
+                    <template x-if="liveStream && activeTab !== 'live'">
+                        <span class="absolute -top-1 -right-1 flex h-3 w-3">
+                            <span
+                                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                        </span>
+                    </template>
+                </button>
+            </div>
+
             <div class="flex items-center space-x-4">
                 <div class="relative">
                     <select id="festival_filter"
@@ -208,16 +232,164 @@
     </div>
 
     <!-- Posts Feed -->
-    <div id="share_zone_feed" class="flex-1 flex flex-col gap-6 pb-10 overflow-y-auto custom-scrollbar">
-        <!-- Posts injected via JS -->
-        <div class="py-20 text-center animate-pulse">
-            <p class="text-gray-500">Waking up the share zone...</p>
+    <div x-show="activeTab === 'posts'" x-cloak class="flex-1 flex flex-col h-full">
+        <div id="share_zone_feed" class="flex-1 flex flex-col gap-6 pb-10 overflow-y-auto custom-scrollbar">
+            <!-- Posts injected via JS -->
+            <div class="py-20 text-center animate-pulse">
+                <p class="text-gray-500">Waking up the share zone...</p>
+            </div>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div id="pagination_container" class="flex justify-center gap-4 pb-10 z-20">
+            <!-- Pagination buttons injected via JS -->
         </div>
     </div>
 
-    <!-- Pagination Controls -->
-    <div id="pagination_container" class="flex justify-center gap-4 pb-10 z-20">
-        <!-- Pagination buttons injected via JS -->
+    <!-- Live Room Content -->
+    <div x-show="activeTab === 'live'" x-cloak
+        class="flex-1 flex flex-col animate-fade-in h-[calc(100vh-150px)] overflow-y-auto pb-20 custom-scrollbar">
+        <div class="max-w-4xl mx-auto w-full px-6 flex flex-col h-full">
+            <!-- Username Header (above video when live) -->
+            <template x-if="liveStream">
+                <div class="relative mb-4 text-center">
+                    <h2 class="text-3xl font-black italic uppercase tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400"
+                        x-text="liveStream.user.name"></h2>
+                </div>
+            </template>
+
+            <!-- Live Feed Placeholder -->
+            <div class="relative w-full bg-black rounded-3xl border border-white/10 overflow-hidden shadow-2xl mb-2"
+                :style="videoHeight > 0 ? 'height: ' + videoHeight + 'px;' : 'aspect-ratio: 16/9;'">
+                <template x-if="liveStream">
+                    <div class="relative w-full h-full">
+                        <video id="live_video" autoplay playsinline muted
+                            class="w-full h-full object-cover grayscale-[0.3] contrast-125"></video>
+                        <div class="absolute top-6 left-6 flex items-center gap-3">
+                            <span
+                                class="bg-red-600 text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-full shadow-lg animate-pulse">Live</span>
+                        </div>
+                        <div class="absolute top-6 right-6 flex items-center gap-3 z-30">
+                            <template x-if="liveStream.user_id == currentUserId || currentUserRole === 'admin'">
+                                <button @click="endLive(liveStream.id)"
+                                    class="bg-red-600/90 hover:bg-red-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition shadow-lg backdrop-blur-md text-white border border-white/20">
+                                    End Stream
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+                <template x-if="!liveStream">
+                    <div
+                        class="flex flex-col items-center justify-center h-full text-center p-12 bg-gradient-to-br from-indigo-900/20 to-black">
+                        <div
+                            class="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/10">
+                            <svg class="w-10 h-10 text-indigo-500" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h2 class="text-2xl font-black italic uppercase tracking-tighter text-white mb-2"
+                            x-text="nextStream ? 'Next Stream Soon' : 'Live Stream Offline'"></h2>
+                        <p class="text-gray-400 text-sm font-bold uppercase tracking-widest max-w-sm mx-auto"
+                            x-text="nextStream ? `The next stream will happen at ${new Date(nextStream.scheduled_at).toLocaleString()}` : 'Check back later for special guest appearances!'">
+                        </p>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Personal Links (below video when live) -->
+            <template x-if="liveStream && liveStream.user.personal_links && liveStream.user.personal_links.length > 0">
+                <div class="relative flex flex-wrap gap-3 justify-center mb-4">
+                    <template x-for="link in liveStream.user.personal_links" :key="link.url">
+                        <a :href="link.url" target="_blank"
+                            class="px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/30 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-lg text-white flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14">
+                                </path>
+                            </svg>
+                            <span x-text="link.name"></span>
+                        </a>
+                    </template>
+                </div>
+            </template>
+
+            <!-- Resize Controls -->
+            <template x-if="liveStream">
+                <div class="absolute items-center justify-center gap-4 mb-6 pb-4 border-b border-white/10">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-gray-500">Video Size:</label>
+                    <input type="range" x-model.number="videoHeightPercent" min="50" max="100" step="5"
+                        @input="updateVideoHeight()"
+                        class="w-32 h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+                    <span class="text-xs font-mono text-white" x-text="videoHeightPercent + '%'"></span>
+                </div>
+            </template>
+
+            <!-- Stream Info -->
+            <template x-if="liveStream">
+                <div class="flex justify-between items-center mb-8 pb-8 border-b border-white/10">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-lg"
+                            x-text="liveStream.user.name.charAt(0)"></div>
+                        <div>
+                            <h3 class="font-black italic uppercase tracking-tighter text-indigo-400"
+                                x-text="liveStream.user.name"></h3>
+                            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Special Guest</p>
+                        </div>
+                    </div>
+                    <div class="text-right flex flex-col items-end gap-2">
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-1">Live For</p>
+                            <p class="text-xl font-bold font-mono text-white" x-text="liveDuration"></p>
+                        </div>
+                        <template x-if="liveStream.user_id == currentUserId || currentUserRole === 'admin'">
+                            <button @click="endLive(liveStream.id)"
+                                class="bg-red-600 hover:bg-red-500 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition shadow-lg text-white">
+                                End Stream
+                            </button>
+                        </template>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Small Chat Section -->
+            <div
+                class="flex-1 flex flex-col bg-white/5 border border-white/10 rounded-[2.5rem] overflow-hidden mb-24 min-h-0">
+                <div class="p-4 border-b border-white/5 flex justify-between items-center bg-black/20">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-gray-500">Live Reaction
+                        Chat</span>
+                </div>
+                <!-- Chat messages -->
+                <div id="live_chat_feed" class="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar"
+                    x-ref="chatScroll">
+                    <template x-for="msg in liveMessages" :key="msg.id">
+                        <div class="flex flex-col animate-fade-in-up">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-[9px] font-black uppercase tracking-widest"
+                                    :style="'color: ' + (msg.color_override || 'white')" x-text="msg.user.name"></span>
+                                <span class="text-[8px] text-gray-600 font-mono"
+                                    x-text="new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})"></span>
+                            </div>
+                            <p class="text-xs text-gray-300 leading-relaxed font-medium break-words"
+                                x-text="msg.message"></p>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Fixed Input -->
+                <div class="p-4 bg-black/40 border-t border-white/5 backdrop-blur-md">
+                    <form @submit.prevent="sendStreamChat" class="flex gap-4">
+                        <input type="text" x-model="chatInput" placeholder="Say something nice..."
+                            class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-indigo-500 transition">
+                        <button type="submit"
+                            class="bg-indigo-600 hover:bg-indigo-500 px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition shadow-lg">Send</button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -274,6 +446,152 @@
 </div>
 
 <script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('shareZone', () => ({
+            activeTab: 'posts',
+            liveStream: null,
+            nextStream: null,
+            liveMessages: [],
+            chatInput: '',
+            liveDuration: '00:00:00',
+            durationInterval: null,
+            pollInterval: null,
+            currentUserId: {{ optional(session('user'))->id ?? 'null' }},
+            currentUserRole: '{{ optional(session('user'))->role ?? 'user' }}',
+            videoHeightPercent: 100,
+            videoHeight: 504, // Default height for max-w-4xl at 100%
+
+            init() {
+                this.checkStreamStatus();
+                this.pollInterval = setInterval(() => this.checkStreamStatus(), 5000);
+                this.updateVideoHeight();
+                window.addEventListener('resize', () => this.updateVideoHeight());
+            },
+
+            updateVideoHeight() {
+                const maxWidth = 896; // max-w-4xl
+                const containerWidth = Math.min(window.innerWidth - 48, maxWidth); // account for px-6
+                const baseHeight = (containerWidth * 9) / 16; // 16:9 aspect ratio
+                this.videoHeight = Math.round((baseHeight * this.videoHeightPercent) / 100);
+            },
+
+            async checkStreamStatus() {
+                try {
+                    const res = await fetch('/admin/get_current_stream');
+                    const data = await res.json();
+
+                    if (data.status === 'live') {
+                        const isNewStream = !this.liveStream || this.liveStream.id !== data.stream.id;
+                        this.liveStream = data.stream;
+                        this.liveMessages = data.stream.messages || [];
+                        this.nextStream = null;
+
+                        if (isNewStream) {
+                            this.startTimer();
+                            this.setupLocalVideo();
+                        }
+
+                        this.$nextTick(() => this.scrollToBottom());
+                    } else {
+                        this.liveStream = null;
+                        this.nextStream = data.next_stream;
+                        this.liveMessages = [];
+                        this.stopTimer();
+                    }
+                } catch (e) {
+                    console.error("Stream status error:", e);
+                }
+            },
+
+            startTimer() {
+                this.stopTimer();
+                const start = new Date(this.liveStream.started_at).getTime();
+                this.durationInterval = setInterval(() => {
+                    const now = new Date().getTime();
+                    const diff = now - start;
+                    const h = Math.floor(diff / 3600000);
+                    const m = Math.floor((diff % 3600000) / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    this.liveDuration = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                }, 1000);
+            },
+
+            stopTimer() {
+                if (this.durationInterval) clearInterval(this.durationInterval);
+            },
+
+            async setupLocalVideo() {
+                this.$nextTick(async () => {
+                    const video = document.getElementById('live_video');
+                    if (!video) return;
+
+                    // If current user is the streamer, show their webcam
+                    if (this.liveStream.user_id === {{ optional(session('user'))->id ?? 'null' }}) {
+                        try {
+                            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                            video.srcObject = stream;
+                        } catch (e) {
+                            console.error("Camera access error:", e);
+                        }
+                    } else {
+                        // For viewers, simulated feed (using a looped video background or placeholder)
+                        // In a real app, this would be a WebRTC or HLS stream
+                        video.src = "/img/video/missedconn_bg.mp4"; // Using existing asset as placeholder
+                        video.loop = true;
+                    }
+                });
+            },
+
+            async sendStreamChat() {
+                if (!this.chatInput.trim() || !this.liveStream) return;
+
+                try {
+                    const res = await fetch('/admin/post_stream_chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            stream_id: this.liveStream.id,
+                            message: this.chatInput
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        this.liveMessages.push(data.message);
+                        this.chatInput = '';
+                        this.$nextTick(() => this.scrollToBottom());
+                    }
+                } catch (e) {
+                    console.error("Chat error:", e);
+                }
+            },
+
+            scrollToBottom() {
+                const feed = this.$refs.chatScroll;
+                if (feed) {
+                    feed.scrollTop = feed.scrollHeight;
+                }
+            },
+
+            async endLive(id) {
+                if (!confirm('End this live stream?')) return;
+                try {
+                    const res = await fetch('/admin/end_stream/' + id, {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                    });
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        alert('Stream ended.');
+                        window.location.reload();
+                    }
+                } catch (e) { alert('Error ending stream'); }
+            }
+        }));
+    });
+
     document.addEventListener('DOMContentLoaded', () => {
         const sidebar = document.getElementById('share_form_sidebar');
         const openBtn = document.getElementById('open_sidebar');

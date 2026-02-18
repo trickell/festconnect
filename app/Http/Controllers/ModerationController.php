@@ -63,6 +63,7 @@ class ModerationController extends BaseController
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
             'role' => 'required|in:user,admin,moderator',
+            'is_special_guest' => 'sometimes|boolean'
         ]);
 
         $data['password'] = Hash::make($data['password']);
@@ -80,6 +81,7 @@ class ModerationController extends BaseController
             'name' => 'sometimes|string|unique:users,name,' . $id,
             'email' => 'sometimes|email|unique:users,email,' . $id,
             'role' => 'sometimes|in:user,admin,moderator',
+            'is_special_guest' => 'sometimes|boolean',
             'about_me' => 'sometimes|string|nullable',
             'festivals' => 'sometimes|string|nullable',
         ]);
@@ -87,6 +89,8 @@ class ModerationController extends BaseController
         if ($request->filled('password')) {
             $data['password'] = Hash::make($request->password);
         }
+
+        $data['is_special_guest'] = $request->boolean('is_special_guest');
 
         $user->update($data);
         return response()->json(['status' => 'success', 'message' => 'User updated successfully.']);

@@ -127,16 +127,11 @@ Route::post('/admin/generate_invites', [App\Http\Controllers\ModerationControlle
 Route::get('/admin/get_invites', [App\Http\Controllers\ModerationController::class, 'get_all_invites']);
 Route::post('/admin/queue_invite/{id}', [App\Http\Controllers\ModerationController::class, 'queueInvite']);
 
-// Route::get('/create_comment', function(){
-//     try {
-//         $user = new \App\Models\Comments();
-//         $user->post_id = 1;
-//         $user->user_id = 1;
-//         $user->comment = 'I know this girl! She was killing it to DailyBread at the main stage. She was wearing a black crop top and jean shorts. She was with a group of friends. I was with my friends and we were all dancing. I was wearing a white t-shirt and black shorts. I was with a group of friends. I would love to meet up with her again. She was so beautiful.';
-//         $user->created_at = date('Y-m-d H:i:s');
-//         $user->save();
-//     }
-//     catch (\Exception $e) {
-//         return json_encode(['status' => 'error', 'message' => 'User creation failed', 'error' => $e->getMessage(), 'user_data' => $user]);
-//     }
-// });
+// Live Stream Routes
+Route::get('/admin/get_current_stream', [App\Http\Controllers\LiveStreamController::class, 'getCurrentStream']);
+Route::post('/admin/schedule_stream', [App\Http\Controllers\LiveStreamController::class, 'scheduleStream']);
+Route::post('/admin/start_stream/{id}', [App\Http\Controllers\LiveStreamController::class, 'startStream']);
+Route::post('/admin/end_stream/{id}', [App\Http\Controllers\LiveStreamController::class, 'endStream']);
+Route::get('/admin/get_my_streams', [App\Http\Controllers\LiveStreamController::class, 'getScheduledStreams']);
+Route::post('/admin/post_stream_chat', [App\Http\Controllers\LiveStreamController::class, 'postChatMessage']);
+Route::post('/admin/update_chat_color', [App\Http\Controllers\LiveStreamController::class, 'updateChatColor']);Route::post('/admin/update_personal_links', [App\Http\Controllers\LiveStreamController::class, 'updatePersonalLinks']);

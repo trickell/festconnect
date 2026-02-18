@@ -33,7 +33,10 @@ class User extends Authenticatable
         'google_token',
         'google_refresh_token',
         'facebook_id',
-        'has_seen_welcome'
+        'has_seen_welcome',
+        'is_special_guest',
+        'stream_chat_color',
+        'personal_links'
     ];
 
     /**
@@ -56,6 +59,8 @@ class User extends Authenticatable
         'last_seen_at' => 'datetime',
         'banned_until' => 'datetime',
         'has_seen_welcome' => 'boolean',
+        'is_special_guest' => 'boolean',
+        'personal_links' => 'array',
     ];
 
     public function posts()
